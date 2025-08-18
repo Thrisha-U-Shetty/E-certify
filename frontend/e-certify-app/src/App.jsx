@@ -1,30 +1,22 @@
-import { useState } from 'react';
-import { ethers } from 'ethers';
+// src/App.jsx
+import { Routes, Route, Link } from "react-router-dom";
+import UploadCertificate from "./Components/UploadCertificate";
 
-function App() {
-  const [account, setAccount] = useState(null);
-
-  const connectWallet = async () => {
-    if (window.ethereum) {
-      try {
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        setAccount(accounts[0]);
-      } catch (error) {
-        console.error("User rejected request", error);
-      }
-    } else {
-      alert("MetaMask not detected. Please install it.");
-    }
-  };
-
+function Home() {
   return (
-    <div style={{ padding: "20px" }}>
+    <div style={{ maxWidth: 720, margin: "2rem auto", padding: "1rem" }}>
       <h1>E-Certify</h1>
-      <button onClick={connectWallet}>
-        {account ? `Connected: ${account}` : "Connect MetaMask"}
-      </button>
+      <p>Welcome! Use the link below to upload a certificate.</p>
+      <Link to="/upload">Go to Upload</Link>
     </div>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/upload" element={<UploadCertificate />} />
+    </Routes>
+  );
+}
