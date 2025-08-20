@@ -1,6 +1,7 @@
 // src/components/UploadCertificate.jsx
 import { useState } from "react";
 import API from "../Services/api";
+import CryptoJS from "crypto-js"; 
 
 export default function UploadCertificate() {
   const [file, setFile] = useState(null);
@@ -12,40 +13,46 @@ export default function UploadCertificate() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!name.trim()) {
-      alert("Please enter a certificate name");
-      return;
-    }
-    if (!file) {
-      alert("Please select a file");
-      return;
-    }
+  if (!name.trim()) {
+    alert("Please enter a certificate name");
+    return;
+  }
+  if (!file) {
+    alert("Please select a file");
+    return;
+  }
 
-    // Build multipart body
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("name", name.trim());
+  const reader = new FileReader();
 
+  reader.onloadend = async () => {
     try {
-  const res = await API.post("/certificates/upload", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-  alert("Uploaded successfully: " + (res.data?.name ?? name));
-  setName("");
-  setFile(null);
-  e.target.reset?.();
-} catch (err) {
-  console.error("Upload failed:", err);
-  const msg =
-    err?.response?.data?.error ||
-    err?.message ||
-    "Upload failed. Please try again.";
-  alert(msg);
-}
+      const wordArray = CryptoJS.lib.WordArray.create(reader.result);
+      const hash = CryptoJS.SHA256(wordArray).toString();
 
+      // Send name + hash to backend
+      const res = await API.post("/certificates/upload", {
+        name: name.trim(),
+        hash,
+      });
+
+      alert("Uploaded successfully: " + (res.data?.name ?? name));
+      setName("");
+      setFile(null);
+      e.target.reset?.();
+    } catch (err) {
+      console.error("Upload failed:", err);
+      const msg =
+        err?.response?.data?.error ||
+        err?.message ||
+        "Upload failed. Please try again.";
+      alert(msg);
+    }
   };
+
+  reader.readAsArrayBuffer(file);
+};
 
   return (
     <div style={{ maxWidth: 520, margin: "2rem auto", padding: "1rem" }}>
