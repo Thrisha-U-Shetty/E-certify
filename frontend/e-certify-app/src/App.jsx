@@ -1,29 +1,20 @@
-import { useState } from 'react';
-import { ethers } from 'ethers';
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+import Register from "./components/Register";
+import LandingPage from "./components/LandingPage";
+import AdminDashboard from "./components/Admindashboard";
+import CreateCertificatePage from "./components/CreateCertificatePage";
 
 function App() {
-  const [account, setAccount] = useState(null);
-
-  const connectWallet = async () => {
-    if (window.ethereum) {
-      try {
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        setAccount(accounts[0]);
-      } catch (error) {
-        console.error("User rejected request", error);
-      }
-    } else {
-      alert("MetaMask not detected. Please install it.");
-    }
-  };
-
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>E-Certify</h1>
-      <button onClick={connectWallet}>
-        {account ? `Connected: ${account}` : "Connect MetaMask"}
-      </button>
-    </div>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/register" element={<Register />} />
+         {/* Admin (Dashboard + Subpages) */}
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin/create" element={<CreateCertificatePage />} /> 
+      </Routes>
   );
 }
 

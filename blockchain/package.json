@@ -8,11 +8,11 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
   "devDependencies": {
     "hardhat": "^2.26.3"
   },
   "dependencies": {
     "@nomicfoundation/hardhat-toolbox": "^6.1.0"
-  }
+  },
+  "description": ""
 }
