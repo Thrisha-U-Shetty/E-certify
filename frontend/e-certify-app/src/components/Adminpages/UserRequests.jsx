@@ -1,24 +1,43 @@
 import { useState } from "react";
+import { EyeIcon, ClipboardIcon, TrashIcon } from "@heroicons/react/24/solid";
 
 export default function UserRequests() {
   const [requests, setRequests] = useState([
     {
       id: "REQ-101",
       name: "Alice Johnson",
+      usn: "USN12345",
       courseTitle: "React",
-      type: "Bootcamp",
+      type: "Workshop",
       start: "2024-01-10",
       end: "2024-02-20",
-      issuedBy: "E-Certify Institute",
     },
     {
       id: "REQ-102",
       name: "Bob Smith",
-      courseTitle: "Python",
-      type: "Workshop",
+      usn: "USN54321",
+      courseTitle: "Python Hackathon",
+      type: "Hackathon",
       start: "2024-03-05",
       end: "2024-03-10",
-      issuedBy: "E-Certify Institute",
+    },
+    {
+      id: "REQ-103",
+      name: "Carol Lee",
+      usn: "USN67890",
+      courseTitle: "Cultural Fest",
+      type: "Cultural Event",
+      start: "2024-04-15",
+      end: "2024-04-20",
+    },
+    {
+      id: "REQ-104",
+      name: "David Kim",
+      usn: "USN98765",
+      courseTitle: "Tech Symposium",
+      type: "Technical Event",
+      start: "2024-05-01",
+      end: "2024-05-05",
     },
   ]);
 
@@ -49,25 +68,33 @@ export default function UserRequests() {
               </div>
 
               <div className="flex gap-3">
+                {/* View / Hide Icon */}
                 <button
                   onClick={() =>
                     setExpanded(expanded === req.id ? null : req.id)
                   }
-                  className="px-3 py-1 text-sm bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition"
+                  className="p-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition flex items-center justify-center"
+                  title={expanded === req.id ? "Hide Details" : "View More"}
                 >
-                  {expanded === req.id ? "Hide" : "View More"}
+                  <EyeIcon className="h-5 w-5" />
                 </button>
+
+                {/* Copy Icon */}
                 <button
                   onClick={() => handleCopy(req)}
-                  className="px-3 py-1 text-sm bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition"
+                  className="p-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition flex items-center justify-center"
+                  title="Copy Details"
                 >
-                  Copy
+                  <ClipboardIcon className="h-5 w-5" />
                 </button>
+
+                {/* Delete Icon */}
                 <button
                   onClick={() => handleDelete(req.id)}
-                  className="px-3 py-1 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                  className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition flex items-center justify-center"
+                  title="Delete Request"
                 >
-                  Delete
+                  <TrashIcon className="h-5 w-5" />
                 </button>
               </div>
             </div>
@@ -75,20 +102,21 @@ export default function UserRequests() {
             {expanded === req.id && (
               <div className="mt-4 text-sm text-gray-700 space-y-1">
                 <p>
-                  <span className="font-medium">Course Name:</span>{" "}
+                  <span className="font-medium">Course / Event Name:</span>{" "}
                   {req.courseTitle}
                 </p>
                 <p>
-                  <span className="font-medium">Course Type:</span> {req.type}
+                  <span className="font-medium">Certification Type:</span>{" "}
+                  {req.type}
+                </p>
+                <p>
+                  <span className="font-medium">USN:</span>{" "}{req.usn} 
                 </p>
                 <p>
                   <span className="font-medium">Start Date:</span> {req.start}
                 </p>
                 <p>
                   <span className="font-medium">End Date:</span> {req.end}
-                </p>
-                <p>
-                  <span className="font-medium">Issued By:</span> {req.issuedBy}
                 </p>
               </div>
             )}

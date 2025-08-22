@@ -3,8 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import Register from "./components/Register";
 import LandingPage from "./components/LandingPage";
-import AdminDashboard from "./components/Admindashboard";
-import CreateCertificatePage from "./components/CreateCertificatePage";
+import AdminDashboard from "./components//Adminpages/Admindashboard";
+import CreateCertificatePage from "./components/Adminpages/CreateCertificatePage";
 
 function App() {
   return (
