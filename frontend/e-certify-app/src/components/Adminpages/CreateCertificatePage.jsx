@@ -1,36 +1,22 @@
 import { useState } from "react";
+import { QRCodeSVG } from "qrcode.react";
 
-export default function CreateCertificatePage() {
-  const [form, setForm] = useState({
-    name: "",
-    usn: "",
-    courseTitle: "",
-    type: "",
-    start: "",
-    end: "",
-    issuedDate: "",
-    signatory: "",
-  });
-
+export default function CreateCertificatePage({ formData, setFormData }) {
   const [qrValue, setQrValue] = useState("");
   const [hash, setHash] = useState("");
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const handleChange = (e) =>
+    setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleGenerateQR = () => {
-    const uniqueId = `${form.name}-${form.usn}-${Date.now()}`;
+    const uniqueId = `${formData.name}-${formData.usn}-${Date.now()}`;
     setHash(uniqueId);
     setQrValue(uniqueId);
   };
 
   const handleAddToBlockchain = async () => {
-    if (!hash) {
-      alert("Generate QR (hash) first before pushing to blockchain.");
-      return;
-    }
-
+    if (!hash)
+      return alert("Generate QR (hash) first before pushing to blockchain.");
     try {
       console.log("Pushing to blockchain:", hash);
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -41,7 +27,6 @@ export default function CreateCertificatePage() {
     }
   };
 
-  // Predefined signatories
   const signatories = {
     cultural: {
       name: "Mrs Pratheksha Rai",
@@ -66,8 +51,7 @@ export default function CreateCertificatePage() {
   };
 
   return (
-    <div className="grid grid-cols-2 gap-6 p-6 bg-gradient-to-br from-indigo-50 via-white to-indigo-100 rounded-2xl shadow-lg">
-      {/* Left Side - Form */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-gradient-to-br from-indigo-50 via-white to-indigo-100 rounded-2xl shadow-lg">
       <div className="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow">
         <h2 className="text-xl font-bold text-indigo-700 mb-4">
           Create Certificate
@@ -76,34 +60,30 @@ export default function CreateCertificatePage() {
           <input
             type="text"
             name="name"
-            value={form.name}
+            value={formData.name}
             onChange={handleChange}
             placeholder="Recipient Name"
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400"
           />
-
-          {/* NEW USN field */}
           <input
             type="text"
             name="usn"
-            value={form.usn}
+            value={formData.usn}
             onChange={handleChange}
             placeholder="USN"
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400"
           />
-
           <input
             type="text"
             name="courseTitle"
-            value={form.courseTitle}
+            value={formData.courseTitle}
             onChange={handleChange}
-            placeholder="Course Title (e.g., React, AI, Blockchain)"
+            placeholder="Course Title"
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400"
           />
-
           <select
             name="type"
-            value={form.type}
+            value={formData.type}
             onChange={handleChange}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400"
           >
@@ -113,51 +93,45 @@ export default function CreateCertificatePage() {
             <option value="Technical Event">Technical Event</option>
             <option value="Cultural Event">Cultural Event</option>
           </select>
-
-          {/* Dates with placeholder trick */}
           <input
-            type={form.start ? "date" : "text"}
+            type={formData.start ? "date" : "text"}
             name="start"
-            value={form.start}
+            value={formData.start}
             onChange={handleChange}
             placeholder="Start Date"
             onFocus={(e) => (e.target.type = "date")}
             onBlur={(e) => {
-              if (!form.start) e.target.type = "text";
+              if (!formData.start) e.target.type = "text";
             }}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400"
           />
-
           <input
-            type={form.end ? "date" : "text"}
+            type={formData.end ? "date" : "text"}
             name="end"
-            value={form.end}
+            value={formData.end}
             onChange={handleChange}
             placeholder="End Date"
             onFocus={(e) => (e.target.type = "date")}
             onBlur={(e) => {
-              if (!form.end) e.target.type = "text";
+              if (!formData.end) e.target.type = "text";
             }}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400"
           />
-
           <input
-            type={form.issuedDate ? "date" : "text"}
+            type={formData.issuedDate ? "date" : "text"}
             name="issuedDate"
-            value={form.issuedDate}
+            value={formData.issuedDate}
             onChange={handleChange}
             placeholder="Issued Date"
             onFocus={(e) => (e.target.type = "date")}
             onBlur={(e) => {
-              if (!form.issuedDate) e.target.type = "text";
+              if (!formData.issuedDate) e.target.type = "text";
             }}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400"
           />
-
-          {/* NEW Signatory Dropdown */}
           <select
             name="signatory"
-            value={form.signatory}
+            value={formData.signatory}
             onChange={handleChange}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400"
           >
@@ -167,8 +141,6 @@ export default function CreateCertificatePage() {
             <option value="hod">HOD</option>
             <option value="principal">Principal</option>
           </select>
-
-          {/* Two buttons */}
           <div className="flex gap-3">
             <button
               type="button"
@@ -177,7 +149,6 @@ export default function CreateCertificatePage() {
             >
               Generate QR
             </button>
-
             <button
               type="button"
               onClick={handleAddToBlockchain}
@@ -189,85 +160,86 @@ export default function CreateCertificatePage() {
         </form>
       </div>
 
-      {/* Right Side - Certificate Preview */}
       <div
-        className="bg-white/80 backdrop-blur-lg shadow-md rounded-xl p-8 border border-indigo-200 w-full max-w-4xl h-full flex flex-col justify-between"
-        style={{ fontFamily: "Times New Roman, Times, serif" }}
-      >
-        <div className="flex justify-between items-center mb-8">
-          {/* Replaced issuer + logo with static AJIET image */}
-          <img src="./public/AJIET.png" alt="AJIET" className="w-full h-auto" />
-        </div>
+  className="bg-white/80 backdrop-blur-lg shadow-md rounded-xl p-6 border border-indigo-200 w-full flex flex-col justify-between h-[20vh] md:h-[90%] overflow-auto"
+  style={{ fontFamily: "Times New Roman, Times, serif" }}
+>
+  {/* Centered smaller content */}
+  <div className="w-11/12 mx-auto flex flex-col justify-between h-full">
+    <div className="flex justify-between items-center mb-6">
+      <img src="./AJIET.png" alt="AJIET" className="w-full h-auto" />
+    </div>
 
-        <div className="text-center px-8">
-          <h3 className="text-xl font-bold text-gray-800 mb-6">
-            Certificate of Completion
-          </h3>
-
-          <p className="text-lg text-gray-700">
-            This certificate is awarded to{" "}
+    <div className="text-center px-4">
+      <h3 className="text-lg font-bold text-gray-800 mb-4">
+        Certificate of Completion
+      </h3>
+      <p className="text-sm text-gray-700">
+        This certificate is awarded to{" "}
+        <span className="font-semibold">
+          {formData.name || "Recipient Name"}
+        </span>{" "}
+        bearing USN{" "}
+        <span className="font-semibold">{formData.usn || "Roll No"}</span>{" "}
+        {formData.type === "Workshop" ? (
+          <>
+            for successfully completing{" "}
             <span className="font-semibold">
-              {form.name || "Recipient Name"}
+              {formData.courseTitle || "Course Title"}
             </span>{" "}
-            bearing USN{" "}
-            <span className="font-semibold">{form.usn || "Roll No"}</span>{" "}
-            {form.type === "Workshop" ? (
-              <>
-                for successfully completing{" "}
-                <span className="font-semibold">
-                  {form.courseTitle || "Course Title"}
-                </span>{" "}
-                <span className="font-medium">{form.type}</span>
-              </>
-            ) : (
-              <>
-                for participating in{" "}
-                <span className="font-semibold">
-                  {form.courseTitle || "Event Title"}
-                </span>{" "}
-                <span className="font-medium">{form.type}</span>
-              </>
-            )}{" "}
-            from {form.start || "Start Date"} to {form.end || "End Date"}.
-          </p>
+            <span className="font-medium">{formData.type}</span>
+          </>
+        ) : (
+          <>
+            for participating in{" "}
+            <span className="font-semibold">
+              {formData.courseTitle || "Event Title"}
+            </span>{" "}
+            <span className="font-medium">{formData.type}</span>
+          </>
+        )}{" "}
+        from {formData.start || "Start Date"} to {formData.end || "End Date"}.
+      </p>
+      {formData.issuedDate && (
+        <p className="mt-4 text-gray-600 text-sm">
+          Issued on: {formData.issuedDate}
+        </p>
+      )}
+    </div>
 
-          {form.issuedDate && (
-            <p className="mt-6 text-gray-600">Issued on: {form.issuedDate}</p>
-          )}
-        </div>
-
-        {/* Bottom Section */}
-        <div className="mt-10 flex justify-between items-end px-6">
-          {/* Left: QR */}
-          <div className="flex flex-col items-center">
-            <div className="w-32 h-32 border-2 border-dashed border-indigo-400 flex items-center justify-center text-gray-500 mb-2">
-              {qrValue ? "QR Generated" : "QR Placeholder"}
-            </div>
-            <p className="text-sm text-indigo-600 text-center">
-              {qrValue
-                ? `Verify at: ${qrValue}`
-                : "QR will appear here after generation."}
-            </p>
+    <div className="mt-6 flex justify-between items-end px-4">
+      <div className="flex flex-col items-center">
+        {qrValue ? (
+          <QRCodeSVG value={qrValue} size={96} />
+        ) : (
+          <div className="w-24 h-24 border-2 border-dashed border-indigo-400 flex items-center justify-center text-gray-500 mb-1">
+            QR Placeholder
           </div>
-
-          {/* Right: Signature */}
-          {form.signatory && signatories[form.signatory] && (
-            <div className="text-right">
-              <img
-                src={signatories[form.signatory].signature}
-                alt="Signature"
-                className="h-16 mx-auto mb-2"
-              />
-              <p className="font-medium text-gray-800">
-                {signatories[form.signatory].name}
-              </p>
-              <p className="text-gray-600 text-sm">
-                {signatories[form.signatory].designation}
-              </p>
-            </div>
-          )}
-        </div>
+        )}
+        <p className="text-xs font-medium text-gray-700 mt-1">
+          Scan to Verify Certificate
+        </p>
       </div>
+
+      {formData.signatory && signatories[formData.signatory] && (
+        <div className="text-right">
+          <img
+            src={signatories[formData.signatory].signature}
+            alt="Signature"
+            className="h-12 mx-auto mb-1"
+          />
+          <p className="font-medium text-gray-800 text-sm">
+            {signatories[formData.signatory].name}
+          </p>
+          <p className="text-gray-600 text-xs">
+            {signatories[formData.signatory].designation}
+          </p>
+        </div>
+      )}
+    </div>
+  </div>
+</div>
+
     </div>
   );
 }

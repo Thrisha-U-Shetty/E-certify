@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import { EyeIcon, ArrowDownTrayIcon } from "@heroicons/react/24/solid"; 
-// 👆 make sure @heroicons/react is installed: npm install @heroicons/react
+import { EyeIcon, ArrowDownTrayIcon } from "@heroicons/react/24/solid";
 
 export default function AllCertificates() {
   const [selectedCert, setSelectedCert] = useState(null);
@@ -32,9 +31,9 @@ export default function AllCertificates() {
   };
 
   return (
-    <div className="p-6 bg-white/70 backdrop-blur-lg rounded-xl shadow min-h-screen flex gap-6">
+    <div className="p-6 bg-white/70 backdrop-blur-lg rounded-xl shadow min-h-screen flex flex-col md:flex-row gap-6">
       {/* Left - Certificates List */}
-      <div className="w-1/2">
+      <div className="w-full md:w-1/2">
         <h2 className="text-xl font-bold text-indigo-700 mb-6">
           All Certificates
         </h2>
@@ -46,7 +45,9 @@ export default function AllCertificates() {
             >
               {/* Certificate Info */}
               <div>
-                <p className="text-lg font-semibold text-gray-800">{cert.name}</p>
+                <p className="text-lg font-semibold text-gray-800">
+                  {cert.name}
+                </p>
                 <p className="text-sm text-gray-600">
                   {cert.courseTitle} {cert.type} Certificate
                 </p>
@@ -66,7 +67,7 @@ export default function AllCertificates() {
       </div>
 
       {/* Right - Certificate Preview */}
-      <div className="w-1/2 bg-white rounded-xl shadow p-6 flex flex-col items-center justify-center">
+      <div className="w-full md:w-1/2 bg-white rounded-xl shadow p-6 flex flex-col items-center justify-center">
         {selectedCert ? (
           <>
             <h3 className="text-lg font-bold text-indigo-700 mb-4">
@@ -75,7 +76,7 @@ export default function AllCertificates() {
             <iframe
               src={selectedCert.fileUrl}
               title="Certificate Preview"
-              className="w-full h-[500px] border rounded"
+              className="w-full h-[25vh] md:h-[500px] border rounded"
             ></iframe>
             <button
               onClick={() => handleDownload(selectedCert.fileUrl)}
