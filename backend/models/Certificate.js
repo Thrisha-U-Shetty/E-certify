@@ -1,12 +1,17 @@
-const mongoose = require('mongoose');
+// backend/models/Certificate.js
+const mongoose = require("mongoose");
 
-const certificateSchema = new mongoose.Schema({
-  name: { type: String, required: true },          // Certificate name
-  hash: { type: String, required: true, unique: true }, // SHA-256 hash of file
-  issuedBy: { type: String, required: true },      // User’s name (issuer)
-  verified: { type: Boolean, default: false },     // Admin verification flag
-  uploadedOn: { type: Date, default: Date.now },   // Timestamp
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' } // Owner
+const CertificateSchema = new mongoose.Schema({
+  certId: { type: String, required: true, unique: true },
+  name: { type: String, required: true },
+  usn: { type: String, required: true },
+  courseTitle: { type: String, required: true },
+  type: { type: String, required: true },
+  start: { type: Date, required: true },
+  end: { type: Date, required: true },
+  issuedDate: { type: Date, required: true },
+  signatory: { type: String, required: true },
+  ipfsHash: { type: String , default:""} // optional, updated after PDF upload
 });
 
-module.exports = mongoose.model('Certificate', certificateSchema);
+module.exports = mongoose.model("Certificate", CertificateSchema);

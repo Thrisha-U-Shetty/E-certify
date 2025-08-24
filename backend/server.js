@@ -3,7 +3,6 @@ const express = require("express");
 const connectDB = require("./config/db");
 const cors = require("cors");
 
-const userRoutes = require("./routes/userRoutes");
 const certificateRoutes = require("./routes/certificateRoutes");
 
 const app = express();
@@ -18,8 +17,7 @@ app.use(cors({
 // MongoDB
 connectDB();
 
-// Routes
-app.use("/api/users", userRoutes);
+
 app.use("/api/certificates", certificateRoutes);
 
 // Default route
