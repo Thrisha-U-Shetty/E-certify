@@ -53,24 +53,24 @@ export default function CreateCertificatePage({ formData, setFormData }) {
 
   const signatories = {
     cultural: {
-      name: "Mrs Pratheksha Rai",
+      name: "Mr Abhilash Kumar",
       designation: "Cultural Coordinator",
-      signature: "/signatures/cultural.png",
+      signature: "./abhilash.png",
     },
     technical: {
-      name: "Mr Nithin Heraje",
+      name: "Mr Raviraj Kamath",
       designation: "Technical Coordinator",
-      signature: "/signatures/technical.png",
+      signature: "/raviraj.png",
     },
     hod: {
-      name: "Dr Anthony PJ",
+      name: "Dr Hemalatha P",
       designation: "HOD",
-      signature: "/signatures/hod.png",
+      signature: "/hemalatha.png",
     },
     principal: {
-      name: "Dr Shantarama Rai",
+      name: "Dr Johnson",
       designation: "Principal",
-      signature: "/signatures/principal.png",
+      signature: "/johnson.png",
     },
   };
 
@@ -255,12 +255,12 @@ export default function CreateCertificatePage({ formData, setFormData }) {
                 <img
                   src={signatories[formData.signatory].signature}
                   alt="Signature"
-                  className="h-12 mx-auto mb-1"
+                  className="w-30 h-10 mx-auto mb-1 object-contain"
                 />
-                <p className="font-medium text-gray-800 text-sm">
+                <p className="font-medium text-gray-800 text-sm text-center">
                   {signatories[formData.signatory].name}
                 </p>
-                <p className="text-gray-600 text-xs">
+                <p className="text-gray-600 text-xs text-center">
                   {signatories[formData.signatory].designation}
                 </p>
               </div>
