@@ -10,17 +10,18 @@
     "preview": "vite preview"
   },
   "dependencies": {
-<<<<<<< HEAD
-    "ethers": "^6.15.0",
-=======
+    "@heroicons/react": "^2.2.0",
+    "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@tailwindcss/vite": "^4.1.12",
+    "clsx": "^2.1.1",
     "crypto-js": "^4.2.0",
+    "ethers": "^6.15.0",
     "lucide-react": "^0.540.0",
     "qrcode.react": "^4.2.0",
->>>>>>> a5efb0b1dce61b9de2ce192eec10049df1808368
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "react-router-dom": "^7.8.1"
+    "react-router-dom": "^7.8.1",
+    "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
