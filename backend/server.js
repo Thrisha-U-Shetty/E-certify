@@ -1,36 +1,35 @@
-require("dotenv").config();
-const express = require("express");
-const connectDB = require("./config/db");
-const cors = require("cors");
+import express from "express";
+import dotenv from "dotenv";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import path from "path";
 
-const userRoutes = require("./routes/userRoutes");
-const certificateRoutes = require("./routes/certificateRoutes");
+import { connectDB } from "./db/connectDB.js";
+
+import authRoutes from "./routes/auth.route.js";
+
+dotenv.config();
 
 const app = express();
-
-// Middleware
-app.use(express.json());
-app.use(cors({
-  origin: "*",   // allow frontend/ngrok requests
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-}));
-// MongoDB
-connectDB();
-
-// Routes
-app.use("/api/users", userRoutes);
-app.use("/api/certificates", certificateRoutes);
-
-// Default route
-app.get("/", (req, res) => {
-  res.send("Backend running");
-});
-
-app.get("/ping", (req, res) => {
-  res.json({ msg: "pong" });
-});
-
-
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log("🚀 Server running successfully"));
+const __dirname = path.resolve();
+
+app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+
+app.use(express.json()); // allows us to parse incoming requests:req.body
+app.use(cookieParser()); // allows us to parse incoming cookies
+
+app.use("/api/auth", authRoutes);
+
+if (process.env.NODE_ENV === "production") {
+	app.use(express.static(path.join(__dirname, "/frontend/dist")));
+
+	app.get("*", (req, res) => {
+		res.sendFile(path.resolve(__dirname, "frontend", "dist", "index.html"));
+	});
+}
+
+app.listen(PORT, () => {
+	connectDB();
+	console.log("Server is running on port: ", PORT);
+});
