@@ -57,36 +57,63 @@ router.get("/verify/:certId", async (req, res) => {
   }
 });
 
-router.get("/all", async (req, res) => {
+// GET certificate details by ID
+router.get("/:id", async (req, res) => {
+  const { id } = req.params;
   try {
-    const certs = await Certificate.find();
-
-    // Map over certificates and fetch PDF from IPFS if ipfsHash exists
-    const certsWithPreview = await Promise.all(
-      certs.map(async (cert) => {
-        let pdfBase64 = null;
-        if (cert.ipfsHash) {
-          try {
-            const ipfsUrl = `https://ipfs.io/ipfs/${cert.ipfsHash}`;
-            const response = await axios.get(ipfsUrl, { responseType: "arraybuffer" });
-            const buffer = Buffer.from(response.data, "binary");
-            pdfBase64 = `data:application/pdf;base64,${buffer.toString("base64")}`;
-          } catch (err) {
-            console.error(`Failed to fetch PDF from IPFS for certId ${cert.certId}`, err);
-          }
-        }
-        return {
-          ...cert.toObject(),
-          pdfPreview: pdfBase64, // null if not available
-        };
-      })
-    );
-
-    res.json({ success: true, certificates: certsWithPreview });
+    const certificate = await Certificate.findById(id);
+    if (!certificate) {
+      return res.status(404).json({ message: "Certificate not found" });
+    }
+    res.json(certificate);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
+    console.error("Error fetching certificate:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
+
+router.post("/:id/ipfs", async (req, res) => {
+  try {
+    const { ipfsHash } = req.body;
+    await Certificate.findByIdAndUpdate(req.params.id, { ipfsHash });
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.json({ success: false, message: "Server error" });
+  }
+});
+
+
+// router.get("/all", async (req, res) => {
+//   try {
+//     const certs = await Certificate.find();
+
+//     // Map over certificates and fetch PDF from IPFS if ipfsHash exists
+//     const certsWithPreview = await Promise.all(
+//       certs.map(async (cert) => {
+//         let pdfBase64 = null;
+//         if (cert.ipfsHash) {
+//           try {
+//             const ipfsUrl = `https://ipfs.io/ipfs/${cert.ipfsHash}`;
+//             const response = await axios.get(ipfsUrl, { responseType: "arraybuffer" });
+//             const buffer = Buffer.from(response.data, "binary");
+//             pdfBase64 = `data:application/pdf;base64,${buffer.toString("base64")}`;
+//           } catch (err) {
+//             console.error(`Failed to fetch PDF from IPFS for certId ${cert.certId}`, err);
+//           }
+//         }
+//         return {
+//           ...cert.toObject(),
+//           pdfPreview: pdfBase64, // null if not available
+//         };
+//       })
+//     );
+
+//     res.json({ success: true, certificates: certsWithPreview });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ success: false, message: "Server error" });
+//   }
+// });
 
 module.exports = router;
