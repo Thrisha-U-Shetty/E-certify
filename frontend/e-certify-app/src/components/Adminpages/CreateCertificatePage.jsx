@@ -5,37 +5,37 @@ import * as htmlToImage from "html-to-image";
 
 export default function CreateCertificatePage({ formData, setFormData }) {
   const [qrValue, setQrValue] = useState("");
-  const [hash, setHash] = useState("");
   const certificateRef = useRef(null);
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleGenerateQR = async () => {
-    try {
-      const response = await fetch(
-        "http://localhost:5000/api/certificates/create",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        }
-      );
-      const data = await response.json();
-      if (data.success) {
-        setHash(data.certId);
-        const frontendBaseURL = import.meta.env.VITE_FRONTEND_BASE_URL;
-        const fullUrl = `${frontendBaseURL}/verify/${data.certId}`;
-        setQrValue(fullUrl);
-        alert(`Certificate created! Certificate ID: ${data.certId}`);
-      } else {
-        alert(data.message || "Failed to create certificate");
+  try {
+    const response = await fetch(
+      "http://localhost:5000/api/certificates/create",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
       }
-    } catch (err) {
-      console.error(err);
-      alert("Server error");
+    );
+    const data = await response.json();
+    if (data.success) {
+      const certId = data.certId; // ✅ stored in a variable instead of state
+      const frontendBaseURL = import.meta.env.VITE_FRONTEND_BASE_URL;
+      const fullUrl = `${frontendBaseURL}/verify/${certId}`;
+      setQrValue(fullUrl); // still using state for QR value
+      alert(`Certificate created! Certificate ID: ${certId}`);
+    } else {
+      alert(data.message || "Failed to create certificate");
     }
-  };
+  } catch (err) {
+    console.error(err);
+    alert("Server error");
+  }
+};
+
 
   // --- UPDATED: high-resolution PDF download ---
 const handleDownloadPDF = async () => {
