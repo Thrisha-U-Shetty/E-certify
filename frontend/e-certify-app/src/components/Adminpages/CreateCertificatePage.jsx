@@ -38,30 +38,46 @@ export default function CreateCertificatePage({ formData, setFormData }) {
   };
 
   // --- UPDATED: high-resolution PDF download ---
-  const handleDownloadPDF = async () => {
+const handleDownloadPDF = async () => {
   if (!certificateRef.current) return alert("Certificate preview not found");
 
   try {
-const certWidth = certificateRef.current.offsetWidth;
-    const certHeight = certificateRef.current.offsetHeight;
+    // Fixed PDF size: Letter (8.5 x 11 inches) at 72 DPI
+    const pdfWidth = 612;
+    const pdfHeight = 792;
 
-    // Convert certificate to PNG with high resolution
+    // Convert certificate DOM to PNG
     const dataUrl = await htmlToImage.toPng(certificateRef.current, {
       backgroundColor: "#ffffff",
       pixelRatio: 3,
-      width: certificateRef.current.offsetWidth,
-      height: certHeight,
-      style: { transform: "scale(1)", transformOrigin: "top left", overflow: "hidden" },
+      style: {
+        transform: "scale(1)",
+        transformOrigin: "top left",
+        overflow: "hidden",
+      },
     });
 
-    // Create PDF with device width and certificate height
+    // Create PDF (Letter size, portrait orientation)
     const pdf = new jsPDF({
-      orientation: certWidth > certHeight ? "landscape" : "portrait",
+      orientation: "portrait", // change to "landscape" if you prefer
       unit: "px",
-      format: [certWidth, certHeight],
+      format: [pdfWidth, pdfHeight],
     });
 
-    pdf.addImage(dataUrl, "PNG", 0, 0, certWidth, certHeight);
+    // Scale the image proportionally to fit inside Letter page
+    const img = new Image();
+    img.src = dataUrl;
+    await new Promise(resolve => (img.onload = resolve));
+
+    const ratio = Math.min(pdfWidth / img.width, pdfHeight / img.height);
+    const imgWidth = img.width * ratio;
+    const imgHeight = img.height * ratio;
+
+    const x = (pdfWidth - imgWidth) / 2;  // center horizontally
+    const y = (pdfHeight - imgHeight) / 2; // center vertically
+
+    pdf.addImage(dataUrl, "PNG", x, y, imgWidth, imgHeight);
+
     pdf.save(`${formData.name || "certificate"}.pdf`);
   } catch (err) {
     console.error("PDF generation/download error:", err);
@@ -94,7 +110,7 @@ const certWidth = certificateRef.current.offsetWidth;
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-gradient-to-br from-indigo-50 via-white to-indigo-100 rounded-2xl shadow-lg">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6 bg-gradient-to-br from-indigo-50 via-white to-indigo-100 rounded-2xl shadow-lg">
       {/* --- Left side: Form --- */}
       <div className="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow">
         <h2 className="text-xl font-bold text-indigo-700 mb-4">
@@ -217,104 +233,100 @@ const certWidth = certificateRef.current.offsetWidth;
 
       {/* --- Right side: Certificate Preview --- */}
       <div
-        ref={certificateRef}
-        className="certificate-preview text-[10px] sm:text-[12px] md:text-[14px] lg:text-[16px]"
-      >
-        <div
-          className="bg-white/80 backdrop-blur-lg shadow-md rounded-xl 
-                     p-4 sm:p-5 md:p-6 
-                     border border-indigo-200 w-full flex flex-col justify-between overflow-hidden"
-          style={{ fontFamily: "Times New Roman, Times, serif" }}
-        >
-          <div className="w-11/12 mx-auto flex flex-col justify-between h-full">
-            {/* Logo */}
-            <div className="flex justify-between items-center mb-4 sm:mb-5 md:mb-6">
-              <img
-                src="../AJIET.png"
-                alt="AJIET"
-                className=" h-auto"
-              />
-            </div>
-
-            {/* Certificate Text */}
-            <div className="text-center px-2 sm:px-4">
-              <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-gray-800 mb-2 sm:mb-3 md:mb-4">
-                CERTIFICATE OF ACHIEVEMENT
-              </h3>
-              <p className="text-[9px] sm:text-[11px] md:text-[13px] lg:text-[15px] text-gray-700 leading-snug">
-                This certificate is awarded to{" "}
-                <span className="font-semibold">
-                  {formData.name || "Recipient Name"}
-                </span>{" "}
-                bearing USN{" "}
-                <span className="font-semibold">
-                  {formData.usn || "Roll No"}
-                </span>{" "}
-                {formData.type === "Workshop" ? (
-                  <>
-                    for successfully completing{" "}
-                    <span className="font-semibold">
-                      {formData.courseTitle || "Course Title"}
-                    </span>{" "}
-                    <span className="font-medium">{formData.type}</span>
-                  </>
-                ) : (
-                  <>
-                    for participating in{" "}
-                    <span className="font-semibold">
-                      {formData.courseTitle || "Event Title"}
-                    </span>{" "}
-                    <span className="font-medium">{formData.type}</span>
-                  </>
-                )}{" "}
-                from {formData.start || "Start Date"} to{" "}
-                {formData.end || "End Date"}.
-              </p>
-              {formData.issuedDate && (
-                <p className="mt-2 sm:mt-3 md:mt-4 text-gray-600 text-[9px] sm:text-[11px] md:text-[12px]">
-                  Issued on: {formData.issuedDate}
-                </p>
-              )}
-            </div>
-
-            {/* QR + Signature */}
-            <div className="mt-4 sm:mt-5 md:mt-6 flex justify-between items-end px-2 sm:px-4">
-              {/* QR */}
-              <div className="flex flex-col items-center">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 mb-1">
-                  {qrValue ? (
-                    <QRCodeSVG value={qrValue} className="w-full h-full" />
-                  ) : (
-                    <div className="w-full h-full border-2 border-dashed border-indigo-400 flex items-center justify-center text-gray-500 text-center text-[8px] sm:text-[10px]">
-                      QR Placeholder
-                    </div>
-                  )}
-                </div>
-                <p className="text-[7px] sm:text-[9px] md:text-[10px] font-medium text-gray-700 mt-1">
-                  Scan to Verify Certificate
-                </p>
-              </div>
-
-              {/* Signature */}
-              {formData.signatory && signatories[formData.signatory] && (
-                <div className="text-right">
-                  <img
-                    src={signatories[formData.signatory].signature}
-                    alt="Signature"
-                    className="w-20 sm:w-24 md:w-28 lg:w-32 h-8 sm:h-9 md:h-10 mx-auto mb-1 object-contain"
-                  />
-                  <p className="font-medium text-gray-800 text-[9px] sm:text-[11px] md:text-[12px] text-center">
-                    {signatories[formData.signatory].name}
-                  </p>
-                  <p className="text-gray-600 text-[7px] sm:text-[9px] md:text-[10px] text-center">
-                    {signatories[formData.signatory].designation}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+  ref={certificateRef}
+  className="certificate-preview text-[9px] sm:text-[11px] md:text-[13px] lg:text-[15px]"
+>
+  <div
+    className="bg-white/80 backdrop-blur-lg shadow-md rounded-lg 
+               p-3 sm:p-4 md:p-5 
+               border border-indigo-200 w-full flex flex-col justify-between overflow-hidden"
+    style={{ fontFamily: "Times New Roman, Times, serif" }}
+  >
+    <div className="w-11/12 mx-auto flex flex-col justify-between h-full">
+      {/* Logo */}
+      <div className="flex justify-between items-center mb-3 sm:mb-4 md:mb-5">
+        <img src="../AJIET.png" alt="AJIET" />
       </div>
+
+      {/* Certificate Text */}
+      <div className="text-center px-1 sm:px-3">
+        <h3 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-gray-800 mb-2">
+          CERTIFICATE OF ACHIEVEMENT
+        </h3>
+        <p className="text-[8px] sm:text-[10px] md:text-[12px] lg:text-[14px] text-gray-700 leading-snug">
+          This certificate is awarded to{" "}
+          <span className="font-semibold">
+            {formData.name || "Recipient Name"}
+          </span>{" "}
+          bearing USN{" "}
+          <span className="font-semibold">
+            {formData.usn || "Roll No"}
+          </span>{" "}
+          {formData.type === "Workshop" ? (
+            <>
+              for successfully completing{" "}
+              <span className="font-semibold">
+                {formData.courseTitle || "Course Title"}
+              </span>{" "}
+              <span className="font-medium">{formData.type}</span>
+            </>
+          ) : (
+            <>
+              for participating in{" "}
+              <span className="font-semibold">
+                {formData.courseTitle || "Event Title"}
+              </span>{" "}
+              <span className="font-medium">{formData.type}</span>
+            </>
+          )}{" "}
+          from {formData.start || "Start Date"} to {formData.end || "End Date"}.
+        </p>
+        {formData.issuedDate && (
+          <p className="mt-1 sm:mt-2 md:mt-3 text-gray-600 text-[8px] sm:text-[10px] md:text-[11px]">
+            Issued on: {formData.issuedDate}
+          </p>
+        )}
+      </div>
+
+      {/* QR + Signature */}
+      <div className="mt-3 sm:mt-4 md:mt-5 flex justify-between items-end px-2 sm:px-3">
+        {/* QR */}
+        <div className="flex flex-col items-center">
+          <div className="w-14 h-14 sm:w-18 sm:h-18 md:w-20 md:h-20 mb-1">
+            {qrValue ? (
+              <QRCodeSVG value={qrValue} className="w-full h-full" />
+            ) : (
+              <div className="w-full h-full border-2 border-dashed border-indigo-400 flex items-center justify-center text-gray-500 text-[7px] sm:text-[9px]">
+                QR Placeholder
+              </div>
+            )}
+          </div>
+          <p className="text-[7px] sm:text-[8px] md:text-[9px] font-medium text-gray-700 mt-1">
+            Scan to Verify Certificate
+          </p>
+        </div>
+
+        {/* Signature */}
+        {formData.signatory && signatories[formData.signatory] && (
+          <div className="text-right">
+            <img
+              src={signatories[formData.signatory].signature}
+              alt="Signature"
+              className="w-18 sm:w-20 md:w-24 h-7 sm:h-8 md:h-9 mx-auto mb-1 object-contain"
+            />
+            <p className="font-medium text-gray-800 text-[8px] sm:text-[10px] md:text-[11px] text-center">
+              {signatories[formData.signatory].name}
+            </p>
+            <p className="text-gray-600 text-[6px] sm:text-[8px] md:text-[9px] text-center">
+              {signatories[formData.signatory].designation}
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+</div>
+
     </div>
   );
 }
