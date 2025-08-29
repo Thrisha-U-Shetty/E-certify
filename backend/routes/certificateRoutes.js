@@ -59,29 +59,15 @@ router.get("/verify/:certId", async (req, res) => {
   }
 });
 
-// GET certificate details by ID
-router.get("/:id", async (req, res) => {
-  const { id } = req.params;
-  try {
-    const certificate = await Certificate.findById(id);
-    if (!certificate) {
-      return res.status(404).json({ message: "Certificate not found" });
-    }
-    res.json(certificate);
-  } catch (err) {
-    console.error("Error fetching certificate:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
 
-router.post("/:id/ipfs", async (req, res) => {
+// routes/certificateRoutes.js
+router.get("/:certId", async (req, res) => {
   try {
-    const { ipfsHash } = req.body;
-    await Certificate.findByIdAndUpdate(req.params.id, { ipfsHash });
-    res.json({ success: true });
+    const cert = await Certificate.findOne({ certId: req.params.certId });
+    if (!cert) return res.status(404).json({ success: false, message: "Not found" });
+    res.json({ success: true, cert });
   } catch (err) {
-    console.error(err);
-    res.json({ success: false, message: "Server error" });
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 

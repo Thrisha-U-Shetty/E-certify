@@ -1,13 +1,133 @@
 import { useState, useRef } from "react";
 import { QRCodeSVG } from "qrcode.react";
+import { ethers } from "ethers";
+import CertificateRegistryABI from "../contracts/CertificateRegistryABI.json";
 import jsPDF from "jspdf";
 import * as htmlToImage from "html-to-image";
-import { uploadCertificateToIPFS } from "../utils/blockchain";
+import { uploadCertificateToIPFS } from "../utils/ipfs.js";
 
 export default function CreateCertificatePage({ formData, setFormData }) {
   const [qrValue, setQrValue] = useState("");
   const certificateRef = useRef(null);
+  const [walletAddress, setWalletAddress] = useState("");
   const [certId, setCertId] = useState(null);
+
+  // ✅ Connect Wallet function
+  const connectWallet = async () => {
+    try {
+      if (!window.ethereum) throw new Error("MetaMask not detected");
+
+      const provider = new ethers.JsonRpcProvider(
+        import.meta.env.VITE_TENDERLY_RPC
+      );
+      const actualChainId = await provider.send("eth_chainId", []);
+      console.log("Chain ID from RPC:", actualChainId);
+
+      await window.ethereum.request({
+        method: "wallet_addEthereumChain",
+        params: [
+          {
+            chainId: actualChainId, // dynamically fetched from RPC
+            chainName: "Tenderly Fork",
+            rpcUrls: [import.meta.env.VITE_TENDERLY_RPC],
+            nativeCurrency: { name: "Ethereum", symbol: "ETH", decimals: 18 },
+          },
+        ],
+      });
+
+      // Request wallet accounts
+      const accounts = await window.ethereum.request({
+        method: "eth_requestAccounts",
+      });
+      setWalletAddress(accounts[0]);
+      console.log("👛 Connected wallet:", accounts[0]);
+    } catch (err) {
+      console.error("❌ Wallet connection failed:", err);
+      alert("Failed to connect wallet: " + err.message);
+    }
+  };
+
+  const handleUploadAndPush = async () => {
+    try {
+      if (!certificateRef.current)
+        throw new Error("Certificate preview not found");
+      if (!certId) throw new Error("Please generate certificate first");
+
+      // 1️⃣ Upload PDF to IPFS
+      const ipfsUrl = await uploadCertificateToIPFS(certificateRef, certId);
+      console.log("✅ Uploaded to IPFS:", ipfsUrl);
+
+      // 2️⃣ Fetch certificate metadata from backend DB
+      const response = await fetch(
+        `http://localhost:5000/api/certificates/${certId}`
+      );
+      if (!response.ok) throw new Error("Failed to fetch certificate from DB");
+
+      const data = await response.json();
+      if (!data.success)
+        throw new Error(data.message || "Certificate not found");
+
+      const certificate = data.cert;
+
+      // 3️⃣ Connect to MetaMask
+      if (!window.ethereum) throw new Error("MetaMask not detected");
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      const signer = await provider.getSigner();
+      const userAddress = await signer.getAddress();
+      console.log("👛 Connected wallet:", userAddress);
+
+      // 4️⃣ Contract setup
+      const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
+      const contract = new ethers.Contract(
+        contractAddress,
+        CertificateRegistryABI,
+        signer
+      );
+
+      // 5️⃣ Validate fields before pushing
+      const requiredFields = [
+        "certId",
+        "name",
+        "usn",
+        "courseTitle",
+        "type",
+        "start",
+        "end",
+        "issuedDate",
+        "signatory",
+      ];
+      for (const field of requiredFields) {
+        if (!certificate[field]) {
+          throw new Error(`❌ Missing required field: ${field}`);
+        }
+      }
+      if (!ipfsUrl) throw new Error("❌ Missing IPFS URL");
+
+      // 6️⃣ Send transaction
+      const tx = await contract.storeCertificate(
+        String(certificate.certId),
+        String(certificate.name),
+        String(certificate.usn),
+        String(certificate.courseTitle),
+        String(certificate.type), // certType in Solidity
+        new Date(certificate.start).toISOString(),
+        new Date(certificate.end).toISOString(),
+        new Date(certificate.issuedDate).toISOString(),
+        String(certificate.signatory),
+        String(ipfsUrl)
+      );
+
+      console.log("⏳ Transaction sent:", tx.hash);
+      await tx.wait(); // Wait for confirmation
+      console.log("🎉 Certificate stored on blockchain!");
+
+      alert(`✅ Certificate stored!\nIPFS: ${ipfsUrl}\nTx: ${tx.hash}`);
+    } catch (err) {
+      console.error(err);
+      alert("❌ Failed: " + err.message);
+    }
+  };
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -222,17 +342,18 @@ export default function CreateCertificatePage({ formData, setFormData }) {
             </button>
             <button
               type="button"
-              onClick={async () => {
-                try {
-                  const ipfsUrl = await uploadCertificateToIPFS(
-                    certificateRef,
-                    certId
-                  );
-                  alert(`✅ Certificate uploaded!\nIPFS URL: ${ipfsUrl}`);
-                } catch (err) {
-                  alert(err + " ❌ Upload failed, check console.");
-                }
-              }}
+              onClick={connectWallet}
+              className="w-1/4 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+            >
+              {walletAddress
+                ? `Wallet: ${walletAddress.slice(0, 6)}...${walletAddress.slice(
+                    -4
+                  )}`
+                : "Connect Wallet"}
+            </button>
+            <button
+              type="button"
+              onClick={handleUploadAndPush}
               className="w-1/4 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
             >
               Add to Blockchain
