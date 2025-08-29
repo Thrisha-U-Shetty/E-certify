@@ -2,132 +2,110 @@ import { useState, useRef } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { ethers } from "ethers";
 import CertificateRegistryABI from "../contracts/CertificateRegistryABI.json";
-import jsPDF from "jspdf";
-import * as htmlToImage from "html-to-image";
 import { uploadCertificateToIPFS } from "../utils/ipfs.js";
+// import jsPDF from "jspdf";
+// import * as htmlToImage from "html-to-image";
 
 export default function CreateCertificatePage({ formData, setFormData }) {
   const [qrValue, setQrValue] = useState("");
   const certificateRef = useRef(null);
-  const [walletAddress, setWalletAddress] = useState("");
   const [certId, setCertId] = useState(null);
 
-  // ✅ Connect Wallet function
-  const connectWallet = async () => {
-    try {
-      if (!window.ethereum) throw new Error("MetaMask not detected");
-
-      const provider = new ethers.JsonRpcProvider(
-        import.meta.env.VITE_TENDERLY_RPC
-      );
-      const actualChainId = await provider.send("eth_chainId", []);
-      console.log("Chain ID from RPC:", actualChainId);
-
-      await window.ethereum.request({
-        method: "wallet_addEthereumChain",
-        params: [
-          {
-            chainId: actualChainId, // dynamically fetched from RPC
-            chainName: "Tenderly Fork",
-            rpcUrls: [import.meta.env.VITE_TENDERLY_RPC],
-            nativeCurrency: { name: "Ethereum", symbol: "ETH", decimals: 18 },
-          },
-        ],
-      });
-
-      // Request wallet accounts
-      const accounts = await window.ethereum.request({
-        method: "eth_requestAccounts",
-      });
-      setWalletAddress(accounts[0]);
-      console.log("👛 Connected wallet:", accounts[0]);
-    } catch (err) {
-      console.error("❌ Wallet connection failed:", err);
-      alert("Failed to connect wallet: " + err.message);
-    }
-  };
-
   const handleUploadAndPush = async () => {
-    try {
-      if (!certificateRef.current)
-        throw new Error("Certificate preview not found");
-      if (!certId) throw new Error("Please generate certificate first");
+  try {
+    if (!certificateRef.current)
+      throw new Error("Certificate preview not found");
+    if (!certId) throw new Error("Please generate certificate first");
 
-      // 1️⃣ Upload PDF to IPFS
-      const ipfsUrl = await uploadCertificateToIPFS(certificateRef, certId);
-      console.log("✅ Uploaded to IPFS:", ipfsUrl);
+    // 1️⃣ Upload PDF to IPFS
+    const ipfsUrl = await uploadCertificateToIPFS(certificateRef, certId);
+    console.log("✅ Uploaded to IPFS:", ipfsUrl);
 
-      // 2️⃣ Fetch certificate metadata from backend DB
-      const response = await fetch(
-        `http://localhost:5000/api/certificates/${certId}`
-      );
-      if (!response.ok) throw new Error("Failed to fetch certificate from DB");
+    // 2️⃣ Fetch certificate metadata from backend DB
+    const response = await fetch(
+      `http://localhost:5000/api/certificates/${certId}`
+    );
+    if (!response.ok) throw new Error("Failed to fetch certificate from DB");
 
-      const data = await response.json();
-      if (!data.success)
-        throw new Error(data.message || "Certificate not found");
+    const data = await response.json();
+    if (!data.success) throw new Error(data.message || "Certificate not found");
 
-      const certificate = data.cert;
+    const certificate = data.cert;
 
-      // 3️⃣ Connect to MetaMask
-      if (!window.ethereum) throw new Error("MetaMask not detected");
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      await provider.send("eth_requestAccounts", []);
-      const signer = await provider.getSigner();
-      const userAddress = await signer.getAddress();
-      console.log("👛 Connected wallet:", userAddress);
+    // 3️⃣ Connect to MetaMask and ensure correct chain
+    if (!window.ethereum) throw new Error("MetaMask not detected");
 
-      // 4️⃣ Contract setup
-      const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
-      const contract = new ethers.Contract(
-        contractAddress,
-        CertificateRegistryABI,
-        signer
-      );
+    const rpcProvider = new ethers.JsonRpcProvider(import.meta.env.VITE_TENDERLY_RPC);
+    const actualChainId = await rpcProvider.send("eth_chainId", []);
+    console.log("Chain ID from RPC:", actualChainId);
 
-      // 5️⃣ Validate fields before pushing
-      const requiredFields = [
-        "certId",
-        "name",
-        "usn",
-        "courseTitle",
-        "type",
-        "start",
-        "end",
-        "issuedDate",
-        "signatory",
-      ];
-      for (const field of requiredFields) {
-        if (!certificate[field]) {
-          throw new Error(`❌ Missing required field: ${field}`);
-        }
+    await window.ethereum.request({
+      method: "wallet_addEthereumChain",
+      params: [
+        {
+          chainId: actualChainId,
+          chainName: "Tenderly Fork",
+          rpcUrls: [import.meta.env.VITE_TENDERLY_RPC],
+          nativeCurrency: { name: "Ethereum", symbol: "ETH", decimals: 18 },
+        },
+      ],
+    });
+
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    await provider.send("eth_requestAccounts", []);
+    const signer = await provider.getSigner();
+    const userAddress = await signer.getAddress();
+    console.log("👛 Connected wallet:", userAddress);
+
+    // 4️⃣ Setup contract
+    const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
+    const contract = new ethers.Contract(contractAddress, CertificateRegistryABI, signer);
+
+    // 5️⃣ Validate required fields
+    const requiredFields = [
+      "certId",
+      "name",
+      "usn",
+      "courseTitle",
+      "type",
+      "start",
+      "end",
+      "issuedDate",
+      "signatory",
+    ];
+    for (const field of requiredFields) {
+      if (!certificate[field]) {
+        throw new Error(`❌ Missing required field: ${field}`);
       }
-      if (!ipfsUrl) throw new Error("❌ Missing IPFS URL");
-
-      // 6️⃣ Send transaction
-      const tx = await contract.storeCertificate(
-        String(certificate.certId),
-        String(certificate.name),
-        String(certificate.usn),
-        String(certificate.courseTitle),
-        String(certificate.type), // certType in Solidity
-        new Date(certificate.start).toISOString(),
-        new Date(certificate.end).toISOString(),
-        new Date(certificate.issuedDate).toISOString(),
-        String(certificate.signatory),
-        String(ipfsUrl)
-      );
-
-      console.log("⏳ Transaction sent:", tx.hash);
-      await tx.wait(); // Wait for confirmation
-      console.log("🎉 Certificate stored on blockchain!");
-
-      alert(`✅ Certificate stored!\nIPFS: ${ipfsUrl}\nTx: ${tx.hash}`);
-    } catch (err) {
-      console.error(err);
-      alert("❌ Failed: " + err.message);
     }
-  };
+    if (!ipfsUrl) throw new Error("❌ Missing IPFS URL");
+
+    // 6️⃣ Send transaction
+    const tx = await contract.storeCertificate(
+      String(certificate.certId),
+      String(certificate.name),
+      String(certificate.usn),
+      String(certificate.courseTitle),
+      String(certificate.type),
+      new Date(certificate.start).toISOString(),
+      new Date(certificate.end).toISOString(),
+      new Date(certificate.issuedDate).toISOString(),
+      String(certificate.signatory),
+      String(ipfsUrl)
+    );
+
+    console.log("⏳ Transaction sent:", tx.hash);
+    await tx.wait();
+    console.log("🎉 Certificate stored on blockchain!");
+
+    alert(`✅ Certificate stored!\nIPFS: ${ipfsUrl}\nTx: ${tx.hash}`);
+  } catch (err) {
+    console.error(err);
+    alert("❌ Failed: " + err.message);
+  }
+};
+
+  
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -158,53 +136,53 @@ export default function CreateCertificatePage({ formData, setFormData }) {
     }
   };
 
-  // --- UPDATED: high-resolution PDF download ---
-  const handleDownloadPDF = async () => {
-    if (!certificateRef.current) return alert("Certificate preview not found");
+  // // --- UPDATED: high-resolution PDF download ---
+  // const handleDownloadPDF = async () => {
+  //   if (!certificateRef.current) return alert("Certificate preview not found");
 
-    try {
-      // Fixed PDF size: Letter (8.5 x 11 inches) at 72 DPI
-      const pdfWidth = 612;
-      const pdfHeight = 792;
+  //   try {
+  //     // Fixed PDF size: Letter (8.5 x 11 inches) at 72 DPI
+  //     const pdfWidth = 612;
+  //     const pdfHeight = 792;
 
-      // Convert certificate DOM to PNG
-      const dataUrl = await htmlToImage.toPng(certificateRef.current, {
-        backgroundColor: "#ffffff",
-        pixelRatio: 3,
-        style: {
-          transform: "scale(1)",
-          transformOrigin: "top left",
-          overflow: "hidden",
-        },
-      });
+  //     // Convert certificate DOM to PNG
+  //     const dataUrl = await htmlToImage.toPng(certificateRef.current, {
+  //       backgroundColor: "#ffffff",
+  //       pixelRatio: 3,
+  //       style: {
+  //         transform: "scale(1)",
+  //         transformOrigin: "top left",
+  //         overflow: "hidden",
+  //       },
+  //     });
 
-      // Create PDF (Letter size, portrait orientation)
-      const pdf = new jsPDF({
-        orientation: "portrait", // change to "landscape" if you prefer
-        unit: "px",
-        format: [pdfWidth, pdfHeight],
-      });
+  //     // Create PDF (Letter size, portrait orientation)
+  //     const pdf = new jsPDF({
+  //       orientation: "portrait", // change to "landscape" if you prefer
+  //       unit: "px",
+  //       format: [pdfWidth, pdfHeight],
+  //     });
 
-      // Scale the image proportionally to fit inside Letter page
-      const img = new Image();
-      img.src = dataUrl;
-      await new Promise((resolve) => (img.onload = resolve));
+  //     // Scale the image proportionally to fit inside Letter page
+  //     const img = new Image();
+  //     img.src = dataUrl;
+  //     await new Promise((resolve) => (img.onload = resolve));
 
-      const ratio = Math.min(pdfWidth / img.width, pdfHeight / img.height);
-      const imgWidth = img.width * ratio;
-      const imgHeight = img.height * ratio;
+  //     const ratio = Math.min(pdfWidth / img.width, pdfHeight / img.height);
+  //     const imgWidth = img.width * ratio;
+  //     const imgHeight = img.height * ratio;
 
-      const x = (pdfWidth - imgWidth) / 2; // center horizontally
-      const y = (pdfHeight - imgHeight) / 2; // center vertically
+  //     const x = (pdfWidth - imgWidth) / 2; // center horizontally
+  //     const y = (pdfHeight - imgHeight) / 2; // center vertically
 
-      pdf.addImage(dataUrl, "PNG", x, y, imgWidth, imgHeight);
+  //     pdf.addImage(dataUrl, "PNG", x, y, imgWidth, imgHeight);
 
-      pdf.save(`${formData.name || "certificate"}.pdf`);
-    } catch (err) {
-      console.error("PDF generation/download error:", err);
-      alert("Failed to generate PDF");
-    }
-  };
+  //     pdf.save(`${formData.name || "certificate"}.pdf`);
+  //   } catch (err) {
+  //     console.error("PDF generation/download error:", err);
+  //     alert("Failed to generate PDF");
+  //   }
+  // };
 
   const signatories = {
     cultural: {
@@ -332,24 +310,6 @@ export default function CreateCertificatePage({ formData, setFormData }) {
               className="w-1/4 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
             >
               Generate QR
-            </button>
-            <button
-              type="button"
-              onClick={handleDownloadPDF}
-              className="w-1/4 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              Download PDF
-            </button>
-            <button
-              type="button"
-              onClick={connectWallet}
-              className="w-1/4 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-            >
-              {walletAddress
-                ? `Wallet: ${walletAddress.slice(0, 6)}...${walletAddress.slice(
-                    -4
-                  )}`
-                : "Connect Wallet"}
             </button>
             <button
               type="button"

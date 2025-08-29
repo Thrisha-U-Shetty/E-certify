@@ -42,36 +42,6 @@ router.post("/create", async (req, res) => {
   }
 });
 
-// ✅ Verify certificate by certId
-router.get("/verify/:certId", async (req, res) => {
-  try {
-    const { certId } = req.params;
-    const certificate = await Certificate.findOne({ certId });
-
-    if (!certificate) {
-      return res.status(404).json({ success: false, message: "Certificate not found" });
-    }
-
-    res.json({ success: true, certificate });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
-});
-
-
-// routes/certificateRoutes.js
-router.get("/:certId", async (req, res) => {
-  try {
-    const cert = await Certificate.findOne({ certId: req.params.certId });
-    if (!cert) return res.status(404).json({ success: false, message: "Not found" });
-    res.json({ success: true, cert });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-
 
 router.post("/upload", async (req, res) => {
   try {
@@ -111,40 +81,60 @@ router.post("/upload", async (req, res) => {
   }
 });
 
+// GET /api/certificates/all
+router.get("/all", async (req, res) => {
+  try {
+    const certificates = await Certificate.find({
+      ipfsHash: { $exists: true, $nin: [null, ""] }, // non-empty strings only
+    });
+
+    if (!certificates.length)
+      return res.status(404).json({ success: false, message: "No certificates found" });
+
+    const result = certificates.map((cert) => ({
+      id: cert._id,
+      certId: cert.certId,
+      name: cert.name,
+      courseTitle: cert.courseTitle,
+      type: cert.type,
+      ipfsUrl: `https://gateway.pinata.cloud/ipfs/${cert.ipfsHash}`, // public gateway
+    }));
+
+    res.json({ success: true, certificates: result });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ✅ Verify certificate by certId
+router.get("/verify/:certId", async (req, res) => {
+  try {
+    const { certId } = req.params;
+    const certificate = await Certificate.findOne({ certId });
+
+    if (!certificate) {
+      return res.status(404).json({ success: false, message: "Certificate not found" });
+    }
+
+    res.json({ success: true, certificate });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
 
 
+// routes/certificateRoutes.js
+router.get("/:certId", async (req, res) => {
+  try {
+    const cert = await Certificate.findOne({ certId: req.params.certId });
+    if (!cert) return res.status(404).json({ success: false, message: "Not found" });
+    res.json({ success: true, cert });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 
-
-// router.get("/all", async (req, res) => {
-//   try {
-//     const certs = await Certificate.find();
-
-//     // Map over certificates and fetch PDF from IPFS if ipfsHash exists
-//     const certsWithPreview = await Promise.all(
-//       certs.map(async (cert) => {
-//         let pdfBase64 = null;
-//         if (cert.ipfsHash) {
-//           try {
-//             const ipfsUrl = `https://ipfs.io/ipfs/${cert.ipfsHash}`;
-//             const response = await axios.get(ipfsUrl, { responseType: "arraybuffer" });
-//             const buffer = Buffer.from(response.data, "binary");
-//             pdfBase64 = `data:application/pdf;base64,${buffer.toString("base64")}`;
-//           } catch (err) {
-//             console.error(`Failed to fetch PDF from IPFS for certId ${cert.certId}`, err);
-//           }
-//         }
-//         return {
-//           ...cert.toObject(),
-//           pdfPreview: pdfBase64, // null if not available
-//         };
-//       })
-//     );
-
-//     res.json({ success: true, certificates: certsWithPreview });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ success: false, message: "Server error" });
-//   }
-// });
 
 module.exports = router;
