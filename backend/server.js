@@ -8,27 +8,24 @@ const certificateRoutes = require("./routes/certificateRoutes");
 const app = express();
 
 // Middleware
-app.use(express.json());
+app.use(express.json({ limit: "10mb" })); // <-- increase JSON payload limit
+app.use(express.urlencoded({ limit: "10mb", extended: true })); // for URL-encoded data
+
 app.use(cors({
   origin: "*",   // allow frontend/ngrok requests
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
+
 // MongoDB
 connectDB();
 
-
+// Routes
 app.use("/api/certificates", certificateRoutes);
 
 // Default route
-app.get("/", (req, res) => {
-  res.send("Backend running");
-});
-
-app.get("/ping", (req, res) => {
-  res.json({ msg: "pong" });
-});
-
+app.get("/", (req, res) => res.send("Backend running"));
+app.get("/ping", (req, res) => res.json({ msg: "pong" }));
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log("🚀 Server running successfully"));
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

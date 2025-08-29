@@ -3,6 +3,8 @@ const router = express.Router();
 const Certificate = require("../models/Certificate");
 const QRCode = require("qrcode");
 const axios = require("axios"); // since you're using it in /all
+const FormData = require("form-data");
+
 
 // Create certificate and return QR code
 router.post("/create", async (req, res) => {
@@ -82,6 +84,49 @@ router.post("/:id/ipfs", async (req, res) => {
     res.json({ success: false, message: "Server error" });
   }
 });
+
+
+
+router.post("/upload", async (req, res) => {
+  try {
+    const { certificateId, pdfBase64 } = req.body;
+
+    if (!certificateId) return res.status(400).json({ success: false, message: "Certificate ID is required" });
+    if (!pdfBase64) return res.status(400).json({ success: false, message: "PDF Base64 is required" });
+
+    const pdfBuffer = Buffer.from(pdfBase64, "base64");
+
+    const form = new FormData();
+    form.append("file", pdfBuffer, "certificate.pdf");
+
+    const pinataResponse = await axios.post(
+      "https://api.pinata.cloud/pinning/pinFileToIPFS",
+      form,
+      {
+        maxBodyLength: "Infinity",
+        headers: {
+          ...form.getHeaders(),
+          pinata_api_key: process.env.PINATA_API_KEY,
+          pinata_secret_api_key: process.env.PINATA_API_SECRET,
+        },
+      }
+    );
+
+    const ipfsHash = pinataResponse.data.IpfsHash;
+    const ipfsUrl = `https://gateway.pinata.cloud/ipfs/${ipfsHash}`;
+
+    // Update DB using numeric certId
+    await Certificate.findOneAndUpdate({ certId: certificateId }, { ipfsHash });
+
+    res.json({ success: true, ipfsHash, ipfsUrl });
+  } catch (err) {
+    console.error("❌ Pinata upload failed:", err.response?.data || err.message);
+    res.status(500).json({ success: false, message: err.message || "Pinata upload failed" });
+  }
+});
+
+
+
 
 
 // router.get("/all", async (req, res) => {
