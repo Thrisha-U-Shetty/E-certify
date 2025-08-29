@@ -9,20 +9,16 @@ export default function SendRequest() {
     type: "",
     start: "",
     end: "",
-    issuedBy: "E-Certify Institute",
     signatory: "",
   });
 
   const [showConfirm, setShowConfirm] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [toast, setToast] = useState(null);
+  const [toast, setToast] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e) => {
@@ -38,7 +34,6 @@ export default function SendRequest() {
       const submittedData = { ...formData };
       setIsSending(false);
 
-      // Clear form
       setFormData({
         name: "",
         usn: "",
@@ -46,145 +41,150 @@ export default function SendRequest() {
         type: "",
         start: "",
         end: "",
-        issuedBy: "E-Certify Institute",
         signatory: "",
       });
 
       console.log("Request Data:", submittedData);
 
-      // ✅ Show animated toast
-      setToast("Request sent to admin!");
-
-      // Auto hide toast after 3s
-      setTimeout(() => setToast(null), 3000);
+      setToast(true);
+      setTimeout(() => setToast(false), 4000);
     }, 1500);
   };
 
+  const signatories = {
+    cultural: { designation: "Cultural Coordinator" },
+    technical: { designation: "Technical Coordinator" },
+    hod: { designation: "HOD" },
+    principal: { designation: "Principal" },
+  };
+
   return (
-    <div className="max-w-lg w-full mx-4 sm:mx-auto mt-6 bg-white rounded-2xl shadow p-6 sm:p-8">
-      <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-indigo-700 text-center sm:text-left">
-        Certificate Request Form
-      </h2>
+    <div className="flex justify-center items-center min-h-screen bg-gray-900 p-4">
+      <div className="w-full max-w-lg bg-gray-800/80 rounded-2xl shadow-2xl p-6 sm:p-8 overflow-y-auto border border-green-500">
+        <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-green-400 text-center">
+          Certificate Request Form
+        </h2>
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4">
-        <input
-          type="text"
-          name="name"
-          value={formData.name}
-          onChange={handleChange}
-          placeholder="Recipient Name (Max 50)"
-          maxLength={50}
-          className="w-full border p-3 rounded-lg border-indigo-300 bg-white/60 focus:ring-2 focus:ring-indigo-400 transition text-sm sm:text-base"
-          required
-        />
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4">
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            placeholder="Recipient Name (Max 50)"
+            maxLength={50}
+            className="w-full border p-3 rounded-lg border-gray-600 bg-gray-900 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-400 transition text-sm sm:text-base"
+            required
+          />
 
-        <input
-          type="text"
-          name="usn"
-          value={formData.usn}
-          onChange={handleChange}
-          placeholder="USN (Max 10)"
-          maxLength={10}
-          className="w-full border p-3 rounded-lg border-indigo-300 bg-white/60 focus:ring-2 focus:ring-indigo-400 transition text-sm sm:text-base"
-          required
-        />
+          <input
+            type="text"
+            name="usn"
+            value={formData.usn}
+            onChange={handleChange}
+            placeholder="USN (Max 10)"
+            maxLength={10}
+            className="w-full border p-3 rounded-lg border-gray-600 bg-gray-900 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-400 transition text-sm sm:text-base"
+            required
+          />
 
-        <input
-          type="text"
-          name="courseTitle"
-          value={formData.courseTitle}
-          onChange={handleChange}
-          placeholder="Course / Event Title (Max 70)"
-          maxLength={70}
-          className="w-full border p-3 rounded-lg border-indigo-300 bg-white/60 focus:ring-2 focus:ring-indigo-400 transition text-sm sm:text-base"
-          required
-        />
+          <input
+            type="text"
+            name="courseTitle"
+            value={formData.courseTitle}
+            onChange={handleChange}
+            placeholder="Course / Event Title (Max 70)"
+            maxLength={70}
+            className="w-full border p-3 rounded-lg border-gray-600 bg-gray-900 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-400 transition text-sm sm:text-base"
+            required
+          />
 
-        <select
-          name="type"
-          value={formData.type}
-          onChange={handleChange}
-          className="w-full border p-3 rounded-lg border-indigo-300 bg-white/60 focus:ring-2 focus:ring-indigo-400 transition text-sm sm:text-base"
-          required
-        >
-          <option value="">Select Type of Certification</option>
-          <option value="Workshop">Workshop</option>
-          <option value="Hackathon">Hackathon</option>
-          <option value="Technical Event">Technical Event</option>
-          <option value="Cultural Event">Cultural Event</option>
-        </select>
-
-        <input
-          type={formData.start ? "date" : "text"}
-          name="start"
-          value={formData.start}
-          onChange={handleChange}
-          placeholder="Start Date"
-          onFocus={(e) => (e.target.type = "date")}
-          onBlur={(e) => {
-            if (!formData.start) e.target.type = "text";
-          }}
-          className="w-full border p-3 rounded-lg border-indigo-300 bg-white/60 focus:ring-2 focus:ring-indigo-400 transition text-sm sm:text-base"
-          required
-        />
-
-        <input
-          type={formData.end ? "date" : "text"}
-          name="end"
-          value={formData.end}
-          onChange={handleChange}
-          placeholder="End Date"
-          onFocus={(e) => (e.target.type = "date")}
-          onBlur={(e) => {
-            if (!formData.end) e.target.type = "text";
-          }}
-          className="w-full border p-3 rounded-lg border-indigo-300 bg-white/60 focus:ring-2 focus:ring-indigo-400 transition text-sm sm:text-base"
-          required
-        />
-
-        <select
-          name="signatory"
-          value={formData.signatory}
-          onChange={handleChange}
-          className="w-full border p-3 rounded-lg border-indigo-300 bg-white/60 focus:ring-2 focus:ring-indigo-400 transition text-sm sm:text-base"
-          required
-        >
-          <option value="">Select Signatory</option>
-          <option value="Dr. A. Kumar">Dr. A. Kumar</option>
-          <option value="Prof. B. Sharma">Prof. B. Sharma</option>
-          <option value="Mrs. C. Reddy">Mrs. C. Reddy</option>
-        </select>
-
-        <div className="flex justify-center sm:justify-end mt-2">
-          <Button
-            type="submit"
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 sm:px-6 py-2 rounded-lg flex items-center text-sm sm:text-base"
-            disabled={isSending}
+          <select
+            name="type"
+            value={formData.type}
+            onChange={handleChange}
+            className="w-full border p-3 rounded-lg border-gray-600 bg-gray-900 text-white focus:ring-2 focus:ring-green-400 transition text-sm sm:text-base"
+            required
           >
-            {isSending && (
-              <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4 sm:w-5 sm:h-5 mr-2"></span>
-            )}
-            Send Request
-          </Button>
-        </div>
-      </form>
+            <option value="">Select Type of Certification</option>
+            <option value="Workshop">Workshop</option>
+            <option value="Hackathon">Hackathon</option>
+            <option value="Technical Event">Technical Event</option>
+            <option value="Cultural Event">Cultural Event</option>
+          </select>
+
+          <input
+            type={formData.start ? "date" : "text"}
+            name="start"
+            value={formData.start}
+            onChange={handleChange}
+            placeholder="Start Date"
+            onFocus={(e) => (e.target.type = "date")}
+            onBlur={(e) => {
+              if (!formData.start) e.target.type = "text";
+            }}
+            className="w-full border p-3 rounded-lg border-gray-600 bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-400 transition text-sm sm:text-base [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:brightness-200 [&::-webkit-calendar-picker-indicator]:contrast-150"
+            required
+          />
+
+          <input
+            type={formData.end ? "date" : "text"}
+            name="end"
+            value={formData.end}
+            onChange={handleChange}
+            placeholder="End Date"
+            onFocus={(e) => (e.target.type = "date")}
+            onBlur={(e) => {
+              if (!formData.end) e.target.type = "text";
+            }}
+            className="w-full border p-3 rounded-lg border-gray-600 bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-400 transition text-sm sm:text-base [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:brightness-200 [&::-webkit-calendar-picker-indicator]:contrast-150"
+            required
+          />
+
+          <select
+            name="signatory"
+            value={formData.signatory}
+            onChange={handleChange}
+            className="w-full border p-3 rounded-lg border-gray-600 bg-gray-900 text-white focus:ring-2 focus:ring-green-400 transition text-sm sm:text-base"
+            required
+          >
+            <option value="">Select Signatory</option>
+            {Object.keys(signatories).map((key) => (
+              <option key={key} value={key}>
+                {signatories[key].designation}
+              </option>
+            ))}
+          </select>
+
+          <div className="flex justify-center sm:justify-end mt-2">
+            <Button
+              type="submit"
+              className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg text-sm sm:text-base"
+              disabled={isSending}
+            >
+              {isSending ? "Sending..." : "Send Request"}
+            </Button>
+          </div>
+        </form>
+      </div>
 
       {/* Confirmation Modal */}
       {showConfirm && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
-          <div className="bg-white p-6 rounded-xl max-w-sm w-full shadow-lg">
-            <h3 className="text-lg font-semibold mb-4 text-center">
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50 p-4">
+          <div className="bg-gray-800 p-6 rounded-xl max-w-sm w-full shadow-lg border border-green-500">
+            <h3 className="text-lg font-semibold mb-4 text-center text-white">
               Are you sure the information you entered is correct?
             </h3>
             <div className="flex justify-center gap-4">
               <button
-                className="px-4 py-2 rounded-lg border border-gray-300"
+                className="px-4 py-2 rounded-lg border border-gray-500 text-white hover:bg-gray-700"
                 onClick={() => setShowConfirm(false)}
               >
                 Cancel
               </button>
               <button
-                className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
+                className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700"
                 onClick={confirmSubmit}
               >
                 Yes, Send
@@ -194,12 +194,59 @@ export default function SendRequest() {
         </div>
       )}
 
-      {/* ✅ Toast Notification */}
+      {/* Toast Notification */}
       {toast && (
-        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg animate-bounce z-50 text-sm sm:text-base">
-          {toast}
+        <div
+          className="fixed z-50 px-4 top-6 inset-x-0 flex justify-center 
+            sm:inset-x-auto sm:right-6 sm:justify-end"
+        >
+          <div
+            className="bg-green-600/90 text-white px-4 py-3 rounded-lg shadow-md flex items-center justify-between
+            w-full sm:w-auto max-w-sm text-sm sm:text-base animate-toastIn relative"
+          >
+            <div className="flex items-center gap-2 flex-1">
+              <svg
+                className="w-5 h-5 text-white flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+              <span className="font-medium">
+                Request submitted successfully!
+              </span>
+            </div>
+            <button
+              onClick={() => setToast(false)}
+              className="ml-3 text-white/80 hover:text-white font-bold text-base"
+            >
+              ✕
+            </button>
+            <div className="absolute bottom-0 left-0 h-0.5 bg-white/50 rounded-b animate-progress w-full"></div>
+          </div>
         </div>
       )}
+
+      <style>
+        {`
+          @keyframes toastIn {
+            0% { opacity: 0; transform: translateY(-20px) scale(0.95); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+          }
+          @keyframes progress {
+            from { width: 100%; }
+            to { width: 0%; }
+          }
+          .animate-toastIn { animation: toastIn 0.35s ease-out forwards; }
+          .animate-progress { animation: progress 4s linear forwards; }
+        `}
+      </style>
     </div>
   );
 }

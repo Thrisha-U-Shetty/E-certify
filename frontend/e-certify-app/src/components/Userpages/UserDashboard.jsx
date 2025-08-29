@@ -1,61 +1,85 @@
-import React from "react";
+import React, { useState } from "react";
+import { Menu, X } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 
 export default function UserDashboard({ username, onLogout }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-indigo-100 via-white to-indigo-200">
+    <div className="min-h-screen flex flex-col md:flex-row bg-gradient-to-br from-black via-gray-900 to-black text-gray-200">
       {/* Sidebar */}
-      <div className="w-64 bg-white/80 backdrop-blur-lg shadow-xl flex flex-col justify-between">
+      <div
+        className={`fixed md:static inset-y-0 left-0 z-40 w-64 transform bg-gray-900/90 backdrop-blur-lg border-r border-green-500/40 shadow-xl flex flex-col justify-between transition-transform duration-300
+        ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
+      >
         <div>
-          {/* Welcome */}
-          <div className="px-6 py-4 border-b">
-            <h2 className="text-xl font-bold text-indigo-700">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-green-500/40">
+            <h2 className="text-xl font-bold text-green-400">
               Welcome, {username}
             </h2>
+            <button
+              className="md:hidden text-gray-400 hover:text-green-400"
+              onClick={() => setSidebarOpen(false)}
+            >
+              <X size={20} />
+            </button>
           </div>
 
-          {/* Navigation */}
           <nav className="flex flex-col gap-2 mt-4 px-4">
             <NavLink
               to="view-certificates"
               className={({ isActive }) =>
-                `px-4 py-2 rounded-lg font-medium transition ${
+                `px-4 py-2 rounded-lg transition ${
                   isActive
-                    ? "bg-indigo-600 text-white shadow"
-                    : "text-gray-700 hover:bg-indigo-100"
+                    ? "bg-green-600 text-white shadow-md"
+                    : "hover:bg-gray-800 text-gray-300"
                 }`
               }
+              onClick={() => setSidebarOpen(false)}
             >
               View Certificates
             </NavLink>
             <NavLink
               to="sendrequest"
               className={({ isActive }) =>
-                `px-4 py-2 rounded-lg font-medium transition ${
+                `px-4 py-2 rounded-lg transition ${
                   isActive
-                    ? "bg-indigo-600 text-white shadow"
-                    : "text-gray-700 hover:bg-indigo-100"
+                    ? "bg-green-600 text-white shadow-md"
+                    : "hover:bg-gray-800 text-gray-300"
                 }`
               }
+              onClick={() => setSidebarOpen(false)}
             >
               My Request
             </NavLink>
           </nav>
         </div>
 
-        {/* Logout */}
-        <div className="p-4 border-t">
+        <div className="p-4 border-t border-green-500/40">
           <button
             onClick={onLogout}
-            className="w-full px-4 py-2 bg-red-500 text-white rounded-lg shadow hover:bg-red-600 transition"
+            className="w-full px-4 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 transition"
           >
             Logout
           </button>
         </div>
       </div>
 
-      {/* Main Content (Child Routes show here) */}
-      <div className="flex-1 p-8">
+      {/* Mobile top bar */}
+      <div className="md:hidden flex items-center justify-between px-4 py-3 bg-gray-900/90 border-b border-green-500/40 shadow">
+        <h1 className="text-lg font-semibold text-green-400">
+          Welcome, {username}
+        </h1>
+        <button
+          className="text-gray-400 hover:text-green-400"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+        >
+          <Menu size={24} />
+        </button>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 mt-12 md:mt-0 h-[100vh] overflow-auto p-6">
         <Outlet />
       </div>
     </div>

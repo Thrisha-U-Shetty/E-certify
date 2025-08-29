@@ -1,75 +1,55 @@
-import React, { useState } from "react";
-import { Button } from "../ui/button";
-import { ArrowDownTrayIcon } from "@heroicons/react/24/solid";
+import React from "react";
+import { EyeIcon } from "@heroicons/react/24/solid";
 
 export default function ViewCertificates({ username }) {
-  const [selectedCert, setSelectedCert] = useState(null);
-
   const certificates = [
-    { id: 1, title: "React Basics", fileUrl: "/certificates/react.pdf" },
-    { id: 2, title: "NodeJS Advanced", fileUrl: "/certificates/node.pdf" },
+    {
+      id: 1,
+      title: "React Basics",
+      fileUrl:
+        "https://gateway.pinata.cloud/ipfs/QmevrDbFN4Qn5CkQGgiPhXcriruGfRHdrByyFHsUWtQs46",
+    },
+    {
+      id: 2,
+      title: "NodeJS Advanced",
+      fileUrl:
+        "https://gateway.pinata.cloud/ipfs/QmevrDbFN4Qn5CkQGgiPhXcriruGfRHdrByyFHsUWtQs46",
+    },
   ];
 
-  const handleDownload = (url) => {
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = url.split("/").pop();
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleView = (cert) => {
+    window.open(cert.fileUrl, "_blank");
   };
 
   return (
-    <div className="min-h-screen bg-indigo-50 p-4 md:p-6 flex flex-col md:flex-row gap-4 md:gap-6">
-      {/* Certificate List */}
-      <div className="w-full md:w-1/3 bg-white rounded-2xl shadow p-4">
-        <h2 className="font-bold text-lg mb-4 text-indigo-700">Certificates</h2>
-        <ul>
-          {certificates.map((cert) => (
-            <li
-              key={cert.id}
-              className={`cursor-pointer p-2 rounded hover:bg-indigo-100 transition ${
-                selectedCert?.id === cert.id ? "bg-indigo-200 font-semibold" : ""
-              }`}
-              onClick={() => setSelectedCert(cert)}
-            >
-              {cert.title}
-            </li>
-          ))}
-        </ul>
-      </div>
+    <div className="p-4 md:p-6 bg-gray-900/80 backdrop-blur-lg rounded-2xl shadow-2xl border border-green-500">
+      <h2 className="text-xl md:text-2xl font-bold text-green-400 mb-6">
+        {username ? `${username}'s Certificates` : "Certificates"}
+      </h2>
 
-      {/* Certificate Preview */}
-      <div className="w-full md:w-2/3 bg-white rounded-2xl shadow p-4 flex flex-col relative">
-        {selectedCert ? (
-          <>
-            <h2 className="font-bold mb-4 text-indigo-700 text-lg md:text-xl">
-              {selectedCert.title}
-            </h2>
-            <div className="flex-1 relative">
-              {/* PDF Preview */}
-              <iframe
-                src={selectedCert.fileUrl}
-                title="Certificate Preview"
-                className="w-full h-[400px] md:h-[500px] border rounded"
-              ></iframe>
-
-              {/* Download button fixed at bottom-right corner */}
-              <div className="absolute bottom-4 right-4">
-                <Button
-                  className="flex items-center justify-center bg-indigo-600 text-white hover:bg-indigo-700 p-2 rounded-full"
-                  onClick={() => handleDownload(selectedCert.fileUrl)}
-                >
-                  <ArrowDownTrayIcon className="h-5 w-5" />
-                </Button>
-              </div>
+      <div className="space-y-4">
+        {certificates.map((cert) => (
+          <div
+            key={cert.id}
+            className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 p-4 border border-gray-700 rounded-xl shadow bg-gray-800/70 hover:border-green-500 hover:shadow-lg transition"
+          >
+            {/* Left - Certificate Info */}
+            <div>
+              <p className="text-lg font-semibold text-white">{cert.title}</p>
+              <p className="text-sm text-gray-400">
+                Certificate ID: {cert.id}
+              </p>
             </div>
-          </>
-        ) : (
-          <p className="text-gray-600 text-center mt-10">
-            Select a certificate to preview
-          </p>
-        )}
+
+            {/* Right - Eye Icon only */}
+            <button
+              onClick={() => handleView(cert)}
+              className="flex items-center justify-center p-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition self-start sm:self-auto"
+            >
+              <EyeIcon className="h-5 w-5" />
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   );
