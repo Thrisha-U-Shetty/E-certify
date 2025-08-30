@@ -37,7 +37,6 @@ router.post("/create", async (req, res) => {
     // Return plain URL
     res.json({ success: true, certId });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
@@ -76,7 +75,6 @@ router.post("/upload", async (req, res) => {
 
     res.json({ success: true, ipfsHash, ipfsUrl });
   } catch (err) {
-    console.error("❌ Pinata upload failed:", err.response?.data || err.message);
     res.status(500).json({ success: false, message: err.message || "Pinata upload failed" });
   }
 });
@@ -102,7 +100,6 @@ router.get("/all", async (req, res) => {
 
     res.json({ success: true, certificates: result });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ success: false, message: err.message });
   }
 });
@@ -119,7 +116,6 @@ router.get("/verify/:certId", async (req, res) => {
 
     res.json({ success: true, certificate });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
