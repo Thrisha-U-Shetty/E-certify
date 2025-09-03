@@ -25,6 +25,7 @@ export const sendVerificationEmail = async (email, verificationToken) => {
 	}
 };
 
+// export const sendWelcomeEmail = async (email, name) => {
 // 	const recipient = [{ email }];
 
 // 	try {
@@ -62,25 +63,6 @@ export const sendPasswordResetEmail = async (email, resetURL) => {
 
 		throw new Error(`Error sending password reset email: ${error}`);
 	}
-};
-export const sendWelcomeEmail = async (email, name) => {
-    const recipient = [{ email }];
-
-    try {
-        const response = await mailtrapClient.send({
-            from: sender,
-            to: recipient,
-            subject: "Welcome to E-Certify 🎉",
-            html: `<h1>Welcome, ${name}!</h1>
-                   <p>Thank you for signing up with E-Certify. Your account has been created successfully.</p>`,
-            category: "Welcome",
-        });
-
-        console.log("✅ Welcome email sent successfully", response);
-    } catch (error) {
-        console.error(`❌ Error sending welcome email`, error);
-        throw new Error(`Error sending welcome email: ${error}`);
-    }
 };
 
 export const sendResetSuccessEmail = async (email) => {

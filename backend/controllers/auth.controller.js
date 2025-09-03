@@ -6,7 +6,7 @@ import {
 	sendPasswordResetEmail,
 	sendResetSuccessEmail,
 	sendVerificationEmail,
-    sendWelcomeEmail,
+    // sendWelcomeEmail,
 } from "../mailtrap/emails.js";
 import { User } from "../models/user.model.js";
 
@@ -72,7 +72,7 @@ export const verifyEmail = async (req, res) => {
 		user.verificationToken = undefined;
 		user.verificationTokenExpiresAt = undefined;
 		await user.save();
-        await sendWelcomeEmail(user.email, user.name);
+        // await sendWelcomeEmail(user.email, user.name);
 		res.status(200).json({
 			success: true,
 			message: "Email verified successfully",
