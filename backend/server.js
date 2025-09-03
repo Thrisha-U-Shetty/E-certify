@@ -3,44 +3,27 @@ const express = require("express");
 const connectDB = require("./config/db");
 const cors = require("cors");
 
-const userRoutes = require("./routes/userRoutes");
 const certificateRoutes = require("./routes/certificateRoutes");
 
 const app = express();
-
-// Middleware
-app.use(express.json());
-app.use(cors({
+ app.use(cors({
   origin: "*",   // allow frontend/ngrok requests
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
+// Middleware
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
 // MongoDB
 connectDB();
 
-<<<<<<< HEAD
-// MongoDB Connection (Atlas)
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => console.log('✅ MongoDB connected'))
-.catch(err => console.error('❌ MongoDB connection error:', err));
-=======
 // Routes
-app.use("/api/users", userRoutes);
 app.use("/api/certificates", certificateRoutes);
->>>>>>> a5efb0b1dce61b9de2ce192eec10049df1808368
 
 // Default route
-app.get("/", (req, res) => {
-  res.send("Backend running");
-});
-
-app.get("/ping", (req, res) => {
-  res.json({ msg: "pong" });
-});
-
+app.get("/", (req, res) => res.send("Backend running"));
+app.get("/ping", (req, res) => res.json({ msg: "pong" }));
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log("🚀 Server running successfully"));
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
