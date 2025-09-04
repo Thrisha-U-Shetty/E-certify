@@ -137,5 +137,3 @@ export default function Verify() {
     </div>
   );
 }
-
-

@@ -176,7 +176,7 @@ export default function UserRequests({ copyRequestToForm }) {
 
   return (
     <div className="p-6 bg-black/80 backdrop-blur-lg border border-gray-700 rounded-xl shadow-lg">
-      <h2 className="text-xl font-bold text-white mb-6">User Requests</h2>
+      <h2 className="text-2xl font-extrabold text-green-400 mb-6 text-center">User Requests</h2>
       <div className="space-y-4">
         {requests.map((req) => (
           <div
@@ -192,7 +192,7 @@ export default function UserRequests({ copyRequestToForm }) {
               <div className="flex gap-3">
                 <button
                   onClick={() => setExpanded(expanded === req.id ? null : req.id)}
-                  className="p-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition flex items-center justify-center"
+                  className="p-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition flex items-center justify-centerr"
                   title={expanded === req.id ? "Hide Details" : "View More"}
                 >
                   <EyeIcon className="h-5 w-5" />
