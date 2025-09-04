@@ -12,3 +12,8 @@ export const sender = {
   email: "hello@demomailtrap.co",
   name: "E-certify",
 };
+
+// export const sender = {
+//   email: "no-reply@ecertify.rf.gd",  // use your verified domain
+//   name: "E-Certify",
+// };
