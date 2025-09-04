@@ -163,7 +163,7 @@ export default function UserRequests({ copyRequestToForm }) {
     { id: "REQ-101", name: "Alice Johnson", usn: "USN12345", courseTitle: "React", type: "Workshop", start: "2024-01-10", end: "2024-02-20" },
     { id: "REQ-102", name: "Bob Smith", usn: "USN54321", courseTitle: "Python Hackathon", type: "Hackathon", start: "2024-03-05", end: "2024-03-10" },
     { id: "REQ-103", name: "Carol Lee", usn: "USN67890", courseTitle: "Cultural Fest", type: "Cultural Event", start: "2024-04-15", end: "2024-04-20" },
-    { id: "REQ-104", name: "David Kim", usn: "USN98765", courseTitle: "Tech Symposium", type: "Technical Event", start: "2024-05-01", end: "2024-05-05" },
+    { id: "REQ-104", name: "David Kim", usn: "USN98765", courseTitle: "Tech Symposium", type: "Technical Event", start: "2024-05-01", end: "2024-05-05" }
   ]);
 
   const [expanded, setExpanded] = useState(null);

@@ -1,0 +1,124 @@
+[
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_certId",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_name",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_usn",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_courseTitle",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_certType",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_start",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_end",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_issuedDate",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_signatory",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_ipfsUrl",
+				"type": "string"
+			}
+		],
+		"name": "storeCertificate",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_certId",
+				"type": "string"
+			}
+		],
+		"name": "getCertificate",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "certId",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "usn",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "courseTitle",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "certType",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "start",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "end",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "issuedDate",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "signatory",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "ipfsUrl",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+]

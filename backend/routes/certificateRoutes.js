@@ -3,6 +3,8 @@ const router = express.Router();
 const Certificate = require("../models/Certificate");
 const QRCode = require("qrcode");
 const axios = require("axios"); // since you're using it in /all
+const FormData = require("form-data");
+
 
 // Create certificate and return QR code
 router.post("/create", async (req, res) => {
@@ -35,8 +37,70 @@ router.post("/create", async (req, res) => {
     // Return plain URL
     res.json({ success: true, certId });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+
+router.post("/upload", async (req, res) => {
+  try {
+    const { certificateId, pdfBase64 } = req.body;
+
+    if (!certificateId) return res.status(400).json({ success: false, message: "Certificate ID is required" });
+    if (!pdfBase64) return res.status(400).json({ success: false, message: "PDF Base64 is required" });
+
+    const pdfBuffer = Buffer.from(pdfBase64, "base64");
+
+    const form = new FormData();
+    form.append("file", pdfBuffer, "certificate.pdf");
+
+    const pinataResponse = await axios.post(
+      "https://api.pinata.cloud/pinning/pinFileToIPFS",
+      form,
+      {
+        maxBodyLength: "Infinity",
+        headers: {
+          ...form.getHeaders(),
+          pinata_api_key: process.env.PINATA_API_KEY,
+          pinata_secret_api_key: process.env.PINATA_API_SECRET,
+        },
+      }
+    );
+
+    const ipfsHash = pinataResponse.data.IpfsHash;
+    const ipfsUrl = `https://gateway.pinata.cloud/ipfs/${ipfsHash}`;
+
+    // Update DB using numeric certId
+    await Certificate.findOneAndUpdate({ certId: certificateId }, { ipfsHash });
+
+    res.json({ success: true, ipfsHash, ipfsUrl });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message || "Pinata upload failed" });
+  }
+});
+
+// GET /api/certificates/all
+router.get("/all", async (req, res) => {
+  try {
+    const certificates = await Certificate.find({
+      ipfsHash: { $exists: true, $nin: [null, ""] }, // non-empty strings only
+    });
+
+    if (!certificates.length)
+      return res.status(404).json({ success: false, message: "No certificates found" });
+
+    const result = certificates.map((cert) => ({
+      id: cert._id,
+      certId: cert.certId,
+      name: cert.name,
+      courseTitle: cert.courseTitle,
+      type: cert.type,
+      ipfsUrl: `https://gateway.pinata.cloud/ipfs/${cert.ipfsHash}`, // public gateway
+    }));
+
+    res.json({ success: true, certificates: result });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
@@ -52,41 +116,21 @@ router.get("/verify/:certId", async (req, res) => {
 
     res.json({ success: true, certificate });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
-router.get("/all", async (req, res) => {
+
+// routes/certificateRoutes.js
+router.get("/:certId", async (req, res) => {
   try {
-    const certs = await Certificate.find();
-
-    // Map over certificates and fetch PDF from IPFS if ipfsHash exists
-    const certsWithPreview = await Promise.all(
-      certs.map(async (cert) => {
-        let pdfBase64 = null;
-        if (cert.ipfsHash) {
-          try {
-            const ipfsUrl = `https://ipfs.io/ipfs/${cert.ipfsHash}`;
-            const response = await axios.get(ipfsUrl, { responseType: "arraybuffer" });
-            const buffer = Buffer.from(response.data, "binary");
-            pdfBase64 = `data:application/pdf;base64,${buffer.toString("base64")}`;
-          } catch (err) {
-            console.error(`Failed to fetch PDF from IPFS for certId ${cert.certId}`, err);
-          }
-        }
-        return {
-          ...cert.toObject(),
-          pdfPreview: pdfBase64, // null if not available
-        };
-      })
-    );
-
-    res.json({ success: true, certificates: certsWithPreview });
+    const cert = await Certificate.findOne({ certId: req.params.certId });
+    if (!cert) return res.status(404).json({ success: false, message: "Not found" });
+    res.json({ success: true, cert });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({ success: false, message: err.message });
   }
 });
+
 
 module.exports = router;
