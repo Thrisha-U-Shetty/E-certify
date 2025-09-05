@@ -1,8 +1,10 @@
 import { useState, useRef } from "react";
+import { Toaster } from "react-hot-toast";
 import { QRCodeSVG } from "qrcode.react";
 import { ethers } from "ethers";
 import CertificateRegistryABI from "../contracts/CertificateRegistryABI.json";
 import { uploadCertificateToIPFS } from "../utils/ipfs.js";
+import { toast } from "react-hot-toast";
 // import jsPDF from "jspdf";
 // import * as htmlToImage from "html-to-image";
 
@@ -83,32 +85,52 @@ export default function CreateCertificatePage({ formData, setFormData }) {
       if (!data.success)
         showToast(data.message || "Certificate not found", "error");
 
-    const certificate = data.cert;
+      const certificate = data.cert;
 
       if (!window.ethereum) showToast("MetaMask not detected", "error");
 
-    const rpcProvider = new ethers.JsonRpcProvider(import.meta.env.VITE_TENDERLY_RPC);
-    const actualChainId = await rpcProvider.send("eth_chainId", []);
-    console.log("Chain ID from RPC:", actualChainId);
+      const rpcProvider = new ethers.JsonRpcProvider(
+        import.meta.env.VITE_TENDERLY_RPC
+      );
+      const actualChainId = await rpcProvider.send("eth_chainId", []);
 
-    await window.ethereum.request({
-      method: "wallet_addEthereumChain",
-      params: [
-        {
-          chainId: actualChainId,
-          chainName: "Tenderly Fork",
-          rpcUrls: [import.meta.env.VITE_TENDERLY_RPC],
-          nativeCurrency: { name: "Ethereum", symbol: "ETH", decimals: 18 },
-        },
-      ],
-    });
+      await window.ethereum.request({
+        method: "wallet_addEthereumChain",
+        params: [
+          {
+            chainId: actualChainId,
+            chainName: "Tenderly Fork",
+            rpcUrls: [import.meta.env.VITE_TENDERLY_RPC],
+            nativeCurrency: { name: "Ethereum", symbol: "ETH", decimals: 18 },
+          },
+        ],
+      });
 
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    await provider.send("eth_requestAccounts", []);
-    const signer = await provider.getSigner();
-    const userAddress = await signer.getAddress();
-    console.log("👛 Connected wallet:", userAddress);
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      const signer = await provider.getSigner();
 
+      const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
+      const contract = new ethers.Contract(
+        contractAddress,
+        CertificateRegistryABI,
+        signer
+      );
+
+      const requiredFields = [
+        "certId",
+        "name",
+        "usn",
+        "courseTitle",
+        "type",
+        "start",
+        "end",
+        "issuedDate",
+        "signatory",
+      ];
+      for (const field of requiredFields) {
+        if (!certificate[field])
+          showToast(`Missing required field: ${field}`,"error");
       const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
       const contract = new ethers.Contract(
         contractAddress,
@@ -168,8 +190,9 @@ export default function CreateCertificatePage({ formData, setFormData }) {
         }
       );
       const data = await response.json();
+
       if (data.success) {
-        setCertId(data.certId); // store in state
+        setCertId(data.certId);
         const frontendBaseURL = import.meta.env.VITE_FRONTEND_BASE_URL;
         const fullUrl = `${frontendBaseURL}/verify/${data.certId}`;
         setQrValue(fullUrl);

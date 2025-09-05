@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { EyeIcon, ClipboardIcon, TrashIcon } from "@heroicons/react/24/solid";
 import toast from "react-hot-toast";
 
@@ -126,23 +126,25 @@ const handleDelete = async (id) => {
                   <EyeIcon className="h-5 w-5" />
                 </button>
 
-                <button
-                  onClick={() => handleCopy(req)}
-                  className="p-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition flex items-center justify-center"
-                  title="Copy Details"
-                >
-                  <ClipboardIcon className="h-5 w-5" />
-                </button>
+                  {/* Copy to form */}
+                  <button
+                    onClick={() => handleCopy(req)}
+                    className="p-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition flex items-center justify-center"
+                    title="Copy Details"
+                  >
+                    <ClipboardIcon className="h-5 w-5" />
+                  </button>
 
-                <button
-                  onClick={() => handleDelete(req.id)}
-                  className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition flex items-center justify-center"
-                  title="Delete Request"
-                >
-                  <TrashIcon className="h-5 w-5" />
-                </button>
+                  {/* Delete */}
+                  <button
+                    onClick={() => handleDelete(req.id || req._id)}
+                    className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition flex items-center justify-center"
+                    title="Delete Request"
+                  >
+                    <TrashIcon className="h-5 w-5" />
+                  </button>
+                </div>
               </div>
-            </div>
 
             {expanded === req.id && (
               <div className="mt-4 text-sm text-gray-200 space-y-1">
@@ -177,3 +179,4 @@ const handleDelete = async (id) => {
     </div>
   );
 }
+
