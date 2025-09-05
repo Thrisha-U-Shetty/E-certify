@@ -5,15 +5,38 @@ const QRCode = require("qrcode");
 const axios = require("axios"); // since you're using it in /all
 const FormData = require("form-data");
 
-
 // Create certificate and return QR code
 router.post("/create", async (req, res) => {
   try {
-    const { name, usn, courseTitle, type, start, end, issuedDate, signatory } = req.body;
+    const { name, usn, courseTitle, type, start, end, issuedDate, signatory } =
+      req.body;
 
     // Validate required fields
-    if (!name || !usn || !courseTitle || !type || !start || !end || !issuedDate || !signatory) {
-      return res.status(400).json({ success: false, message: "All fields are required" });
+    if (
+      !name ||
+      !usn ||
+      !courseTitle ||
+      !type ||
+      !start ||
+      !end ||
+      !issuedDate ||
+      !signatory
+    ) {
+      return res
+        .status(400)
+        .json({ success: false, message: "All fields are required" });
+    }
+
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    const issueDate = new Date(issuedDate);
+
+    if (issueDate < startDate || issueDate < endDate) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Issued date must be on or after the end date and not before the start date",
+      });
     }
 
     // Generate random 6-digit certId
@@ -30,7 +53,7 @@ router.post("/create", async (req, res) => {
       end,
       issuedDate,
       signatory,
-      ipfsHash:""
+      ipfsHash: "",
     });
     await certificate.save();
 
@@ -41,13 +64,18 @@ router.post("/create", async (req, res) => {
   }
 });
 
-
 router.post("/upload", async (req, res) => {
   try {
     const { certificateId, pdfBase64 } = req.body;
 
-    if (!certificateId) return res.status(400).json({ success: false, message: "Certificate ID is required" });
-    if (!pdfBase64) return res.status(400).json({ success: false, message: "PDF Base64 is required" });
+    if (!certificateId)
+      return res
+        .status(400)
+        .json({ success: false, message: "Certificate ID is required" });
+    if (!pdfBase64)
+      return res
+        .status(400)
+        .json({ success: false, message: "PDF Base64 is required" });
 
     const pdfBuffer = Buffer.from(pdfBase64, "base64");
 
@@ -75,7 +103,9 @@ router.post("/upload", async (req, res) => {
 
     res.json({ success: true, ipfsHash, ipfsUrl });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message || "Pinata upload failed" });
+    res
+      .status(500)
+      .json({ success: false, message: err.message || "Pinata upload failed" });
   }
 });
 
@@ -87,7 +117,9 @@ router.get("/all", async (req, res) => {
     });
 
     if (!certificates.length)
-      return res.status(404).json({ success: false, message: "No certificates found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "No certificates found" });
 
     const result = certificates.map((cert) => ({
       id: cert._id,
@@ -111,7 +143,9 @@ router.get("/verify/:certId", async (req, res) => {
     const certificate = await Certificate.findOne({ certId });
 
     if (!certificate) {
-      return res.status(404).json({ success: false, message: "Certificate not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Certificate not found" });
     }
 
     res.json({ success: true, certificate });
@@ -120,18 +154,16 @@ router.get("/verify/:certId", async (req, res) => {
   }
 });
 
-
 // routes/certificateRoutes.js
 router.get("/:certId", async (req, res) => {
   try {
     const cert = await Certificate.findOne({ certId: req.params.certId });
-    if (!cert) return res.status(404).json({ success: false, message: "Not found" });
+    if (!cert)
+      return res.status(404).json({ success: false, message: "Not found" });
     res.json({ success: true, cert });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
-
 module.exports = router;
-

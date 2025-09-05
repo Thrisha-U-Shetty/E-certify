@@ -5,7 +5,6 @@ import { ethers } from "ethers";
 import CertificateRegistryABI from "../contracts/CertificateRegistryABI.json";
 import { uploadCertificateToIPFS } from "../utils/ipfs.js";
 import { toast } from "react-hot-toast";
-import { FetchRequest } from "ethers";
 
 export default function CreateCertificatePage({ formData, setFormData }) {
   const [qrValue, setQrValue] = useState("");
@@ -13,17 +12,18 @@ export default function CreateCertificatePage({ formData, setFormData }) {
   const [certId, setCertId] = useState(null);
 
   // --- Custom toast functions with close button ---
- const showToast = (message, type = "success") => {
-  toast.custom(
-    (t) => (
+  const showToast = (message, type = "success") => {
+    toast.custom((t) => (
       <div
         className={`w-full sm:w-auto max-w-sm transform transition-all duration-200
-          ${t.visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"}`}
+          ${
+            t.visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"
+          }`}
       >
         <div
           className={`${
             type === "success"
-              ? "bg-green-600/90"
+              ? "bg-green-700/90"
               : "bg-gradient-to-r from-red-600 via-red-500 to-red-600"
           } text-white px-4 py-3 rounded-lg shadow-md flex items-center justify-between relative overflow-hidden`}
         >
@@ -46,25 +46,22 @@ export default function CreateCertificatePage({ formData, setFormData }) {
               animation: "shrink 5s linear forwards",
             }}
           ></div>
-
-          {/* Keyframes (inline, injected dynamically) */}
-          <style jsx>{`
-            @keyframes shrink {
-              from {
-                transform: scaleX(1);
-                transform-origin: left;
+          <style>{`
+              @keyframes shrink {
+                from {
+                  transform: scaleX(1);
+                  transform-origin: left;
+                }
+                to {
+                  transform: scaleX(0);
+                  transform-origin: left;
+                }
               }
-              to {
-                transform: scaleX(0);
-                transform-origin: left;
-              }
-            }
-          `}</style>
+            `}</style>
         </div>
       </div>
-    )
-  );
-};
+    ));
+  };
 
   const handleUploadAndPush = async () => {
     try {
@@ -73,7 +70,7 @@ export default function CreateCertificatePage({ formData, setFormData }) {
       if (!certId) showToast("Please generate certificate first", "error");
 
       const ipfsUrl = await uploadCertificateToIPFS(certificateRef, certId);
-      showToast("Uploaded to IPFS", "success");
+      showToast("Uploaded PDF", "success");
 
       const response = await fetch(
         `http://localhost:5000/api/certificates/${certId}`
@@ -149,6 +146,7 @@ export default function CreateCertificatePage({ formData, setFormData }) {
       );
       await tx.wait();
       toast.dismiss(loadingToastId);
+      showToast("Certificate added to blockchain", "success");
     } catch (err) {
       toast.dismiss();
       showToast(err.message, "error");
@@ -257,7 +255,7 @@ export default function CreateCertificatePage({ formData, setFormData }) {
 
   return (
     <>
-      <Toaster position="bottom-right" gutter={8} />
+      <Toaster position="top-right" gutter={8} />
       <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black p-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
           {/* --- Left side: Form --- */}

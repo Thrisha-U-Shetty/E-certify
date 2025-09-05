@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
-import { toast, Toaster } from "react-hot-toast"; // ✅ Import Toaster
+import { toast } from "react-hot-toast";
 import CreateCertificatePage from "./CreateCertificatePage";
 import AllCertificates from "./AllCertificates";
 import UserRequests from "./UserRequests";
@@ -8,6 +8,9 @@ import UserRequests from "./UserRequests";
 export default function AdminDashboard() {
   const [activePage, setActivePage] = useState("requests");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const [requests, setRequests] = useState([]); // ✅ Central requests state
+  const [loading, setLoading] = useState(true);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -23,45 +26,78 @@ export default function AdminDashboard() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
 
-  // --- Custom toast function ---
+  // --- Fetch requests ---
+  useEffect(() => {
+    const fetchRequests = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch("http://localhost:5000/api/requests/all");
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setRequests(data.requests);
+        }
+      } catch (err) {
+        console.error("Error fetching requests:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRequests();
+  }, []);
+
+  // --- Custom toast function (with progress + close) ---
   const showToast = (message, type = "success") => {
     toast.custom(
       (t) => (
         <div
-          className={`w-full sm:w-auto max-w-sm transform transition-all duration-200 ${
-            t.visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"
-          }`}
+          className={`w-full sm:w-auto max-w-sm transform transition-all duration-200
+            ${t.visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"}`}
         >
           <div
-            className={`${
-              type === "success"
-                ? "bg-green-600/90"
-                : "bg-gradient-to-r from-red-600 via-red-500 to-red-600"
-            } text-white px-4 py-3 rounded-lg shadow-md flex items-center justify-between relative overflow-hidden`}
+            className={`relative overflow-hidden text-white px-4 py-3 rounded-lg shadow-md flex items-center justify-between
+              ${
+                type === "success"
+                  ? "bg-green-700/90"
+                  : "bg-gradient-to-r from-red-600 via-red-500 to-red-600"
+              }`}
           >
+            {/* Message */}
             <span className="font-medium flex-1">{message}</span>
+
+            {/* Close button */}
             <button
               onClick={() => toast.dismiss(t.id)}
-              className="ml-2 text-white/80 hover:text-white font-bold text-base"
+              className="ml-3 text-white/80 hover:text-white font-bold text-lg leading-none"
             >
               ✕
             </button>
+
+            {/* Progress bar */}
             <div
               className="absolute bottom-0 left-0 h-0.5 bg-white/80 rounded-b"
-              style={{ width: "100%", animation: "shrink 5s linear forwards" }}
+              style={{
+                width: "100%",
+                animation: "shrink 5s linear forwards",
+              }}
             ></div>
-            <style>
-              {`
-    @keyframes shrink {
-      from { transform: scaleX(1); transform-origin: left; }
-      to   { transform: scaleX(0); transform-origin: left; }
-    }
-  `}
-            </style>
+
+            {/* Inline keyframes */}
+            <style>{`
+              @keyframes shrink {
+                from {
+                  transform: scaleX(1);
+                  transform-origin: left;
+                }
+                to {
+                  transform: scaleX(0);
+                  transform-origin: left;
+                }
+              }
+            `}</style>
           </div>
         </div>
       ),
-      { id: "singleton-toast" } // ← ensures only one toast at a time
+      { duration: 5000 }
     );
   };
 
@@ -75,31 +111,31 @@ export default function AdminDashboard() {
       start: request.start,
       end: request.end,
       issuedDate: "",
-      signatory: "",
+      signatory: request.signatory,
     });
     setActivePage("create");
     showToast("Request copied to certificate form!", "success");
   };
 
-  // --- Confirm delete function ---
+  // --- Confirm delete ---
   const confirmDelete = async () => {
     if (!deleteId) return;
     try {
-      const res = await fetch(
-        `http://localhost:5000/api/requests/${deleteId}`,
-        {
-          method: "DELETE",
-        }
-      );
+      const res = await fetch(`http://localhost:5000/api/requests/${deleteId}`, {
+        method: "DELETE",
+      });
 
-      const data = await res.json(); // Parse JSON from response
+      const data = await res.json();
+      console.log("Delete response:", data);
 
       if (res.ok && data.success) {
+        setRequests((prev) => prev.filter((r) => r._id !== deleteId));
         setDeleteId(null);
         setShowConfirm(false);
+        console.log("Calling success toast");
         showToast(data.message || "Request deleted successfully!", "success");
-        // Optional: trigger a re-fetch or notify UserRequests to remove the item
       } else {
+        console.log("Calling error toast");
         showToast(data.message || "Failed to delete request!", "error");
       }
     } catch (err) {
@@ -194,16 +230,15 @@ export default function AdminDashboard() {
       <div className="flex-1 mt-12 md:mt-0 h-[100vh] overflow-auto relative">
         {activePage === "requests" && (
           <UserRequests
+            requests={requests}
+            loading={loading}
             copyRequestToForm={copyRequestToForm}
             setShowConfirm={setShowConfirm}
             setDeleteId={setDeleteId}
           />
         )}
         {activePage === "create" && (
-          <CreateCertificatePage
-            formData={formData}
-            setFormData={setFormData}
-          />
+          <CreateCertificatePage formData={formData} setFormData={setFormData} />
         )}
         {activePage === "all" && <AllCertificates />}
       </div>
@@ -232,9 +267,6 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
-
-      {/* --- Toaster (required for toast messages) --- */}
-      <Toaster position="top-right" reverseOrder={false} />
     </div>
   );
 }
