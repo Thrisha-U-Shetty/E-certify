@@ -16,22 +16,66 @@ export default function SendRequest() {
   const [isSending, setIsSending] = useState(false);
   const [toast, setToast] = useState({ show: false, type: "", message: "" });
 
+  // ✅ Helper: show toast
+  const triggerToast = (type, message) => {
+    setToast({ show: true, type, message });
+    setTimeout(() => setToast({ show: false, type: "", message: "" }), 4000);
+  };
+
+  // ✅ Handle input change with character restrictions
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === "name") {
+      // Allow only alphabets + spaces
+      const clean = value.replace(/[^A-Za-z ]/g, "");
+      setFormData((prev) => ({ ...prev, [name]: clean }));
+      return;
+    }
+
+    if (name === "usn") {
+      // Allow only alphanumeric, no whitespace/special chars
+      const clean = value.replace(/[^A-Za-z0-9]/g, "");
+      setFormData((prev) => ({ ...prev, [name]: clean }));
+      return;
+    }
+
+    // Default handler
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // ✅ Validate on submit
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // 🔑 Validate start < end date
-    if (formData.start && formData.end && new Date(formData.start) > new Date(formData.end)) {
-      setToast({
-        show: true,
-        type: "error",
-        message: "Invalid date range: Please ensure the start date is before the end date.",
-      });
-      setTimeout(() => setToast({ show: false, type: "", message: "" }), 4000);
+    // Validate name (letters + spaces only, no leading/trailing/multiple spaces)
+    if (!/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(formData.name)) {
+      triggerToast(
+        "error",
+        "Name must contain only letters and single spaces (no leading/trailing/multiple spaces, numbers, or special characters)."
+      );
+      return;
+    }
+
+    // Validate USN (must have both letters & numbers, no specials)
+    if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]+$/.test(formData.usn)) {
+      triggerToast(
+        "error",
+        "USN must include both letters and numbers (no spaces or special characters)."
+      );
+      return;
+    }
+
+    // Validate start < end date
+    if (
+      formData.start &&
+      formData.end &&
+      new Date(formData.start) > new Date(formData.end)
+    ) {
+      triggerToast(
+        "error",
+        "Please ensure the start date is before the end date."
+      );
       return;
     }
 
@@ -44,11 +88,14 @@ export default function SendRequest() {
     setIsSending(true);
 
     try {
-      const response = await fetch("http://localhost:5000/api/certificates/requests", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+      const response = await fetch(
+        "http://localhost:5000/api/requests/create",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        }
+      );
 
       if (!response.ok) throw new Error("Failed to send request");
 
@@ -66,21 +113,10 @@ export default function SendRequest() {
         signatory: "",
       });
 
-      // Success toast
-      setToast({
-        show: true,
-        type: "success",
-        message: "Request submitted successfully!",
-      });
-      setTimeout(() => setToast({ show: false, type: "", message: "" }), 4000);
+      triggerToast("success", "Request submitted successfully!");
     } catch (err) {
       console.error("Error submitting request:", err);
-      setToast({
-        show: true,
-        type: "error",
-        message: "Something went wrong. Please try again.",
-      });
-      setTimeout(() => setToast({ show: false, type: "", message: "" }), 4000);
+      triggerToast("error", "Something went wrong. Please try again.");
     } finally {
       setIsSending(false);
     }
@@ -95,6 +131,7 @@ export default function SendRequest() {
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-900 p-4">
+      {/* Form Wrapper */}
       <div className="w-full max-w-lg bg-gray-800/80 rounded-2xl shadow-2xl p-6 sm:p-8 overflow-y-auto border border-green-500">
         <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-green-400 text-center">
           Certificate Request Form
@@ -107,7 +144,7 @@ export default function SendRequest() {
             name="name"
             value={formData.name}
             onChange={handleChange}
-            placeholder="Recipient Name (Max 50)"
+            placeholder="Recipient Name (Only alphabets)"
             maxLength={50}
             className="w-full border p-3 rounded-lg border-gray-600 bg-gray-900 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-400 transition text-sm sm:text-base"
             required
@@ -118,7 +155,7 @@ export default function SendRequest() {
             name="usn"
             value={formData.usn}
             onChange={handleChange}
-            placeholder="USN (Max 10)"
+            placeholder="USN (letters + numbers, max 10)"
             maxLength={10}
             className="w-full border p-3 rounded-lg border-gray-600 bg-gray-900 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-400 transition text-sm sm:text-base"
             required
@@ -250,7 +287,11 @@ export default function SendRequest() {
                   strokeWidth="2"
                   viewBox="0 0 24 24"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
               )}
               <span className="font-medium">{toast.message}</span>

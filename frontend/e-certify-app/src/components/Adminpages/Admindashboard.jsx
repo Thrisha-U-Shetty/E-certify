@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Menu, X } from "lucide-react";
+import { toast, Toaster } from "react-hot-toast"; // ✅ Import Toaster
 import CreateCertificatePage from "./CreateCertificatePage";
 import AllCertificates from "./AllCertificates";
 import UserRequests from "./UserRequests";
@@ -8,7 +9,6 @@ export default function AdminDashboard() {
   const [activePage, setActivePage] = useState("requests");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Form state lifted here
   const [formData, setFormData] = useState({
     name: "",
     usn: "",
@@ -20,7 +20,52 @@ export default function AdminDashboard() {
     signatory: "",
   });
 
-  // Function to copy request to form and auto redirect
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+
+  // --- Custom toast function ---
+  const showToast = (message, type = "success") => {
+    toast.custom(
+      (t) => (
+        <div
+          className={`w-full sm:w-auto max-w-sm transform transition-all duration-200 ${
+            t.visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"
+          }`}
+        >
+          <div
+            className={`${
+              type === "success"
+                ? "bg-green-600/90"
+                : "bg-gradient-to-r from-red-600 via-red-500 to-red-600"
+            } text-white px-4 py-3 rounded-lg shadow-md flex items-center justify-between relative overflow-hidden`}
+          >
+            <span className="font-medium flex-1">{message}</span>
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="ml-2 text-white/80 hover:text-white font-bold text-base"
+            >
+              ✕
+            </button>
+            <div
+              className="absolute bottom-0 left-0 h-0.5 bg-white/80 rounded-b"
+              style={{ width: "100%", animation: "shrink 5s linear forwards" }}
+            ></div>
+            <style>
+              {`
+    @keyframes shrink {
+      from { transform: scaleX(1); transform-origin: left; }
+      to   { transform: scaleX(0); transform-origin: left; }
+    }
+  `}
+            </style>
+          </div>
+        </div>
+      ),
+      { id: "singleton-toast" } // ← ensures only one toast at a time
+    );
+  };
+
+  // --- Copy request to form ---
   const copyRequestToForm = (request) => {
     setFormData({
       name: request.name,
@@ -33,14 +78,45 @@ export default function AdminDashboard() {
       signatory: "",
     });
     setActivePage("create");
+    showToast("Request copied to certificate form!", "success");
+  };
+
+  // --- Confirm delete function ---
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    try {
+      const res = await fetch(
+        `http://localhost:5000/api/requests/${deleteId}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      const data = await res.json(); // Parse JSON from response
+
+      if (res.ok && data.success) {
+        setDeleteId(null);
+        setShowConfirm(false);
+        showToast(data.message || "Request deleted successfully!", "success");
+        // Optional: trigger a re-fetch or notify UserRequests to remove the item
+      } else {
+        showToast(data.message || "Failed to delete request!", "error");
+      }
+    } catch (err) {
+      console.error(err);
+      setShowConfirm(false);
+      setDeleteId(null);
+      showToast("Error deleting request!", "error");
+    }
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-gradient-to-br from-black via-gray-900 to-green-900">
+    <div className="min-h-screen flex flex-col md:flex-row bg-gradient-to-br from-black via-gray-900 to-green-900 relative">
       {/* Sidebar */}
       <div
-        className={`fixed md:static inset-y-0 left-0 z-40 w-64 transform bg-black/90 backdrop-blur-lg shadow-xl flex flex-col justify-between transition-transform duration-300 
-        ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
+        className={`fixed md:static inset-y-0 left-0 z-40 w-64 transform bg-black/90 backdrop-blur-lg shadow-xl flex flex-col justify-between transition-transform duration-300 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } md:translate-x-0`}
       >
         <div>
           <div className="flex items-center justify-between px-6 py-4 border-b border-green-500">
@@ -115,15 +191,50 @@ export default function AdminDashboard() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 mt-12 md:mt-0 h-[100vh] overflow-auto">
+      <div className="flex-1 mt-12 md:mt-0 h-[100vh] overflow-auto relative">
         {activePage === "requests" && (
-          <UserRequests copyRequestToForm={copyRequestToForm} />
+          <UserRequests
+            copyRequestToForm={copyRequestToForm}
+            setShowConfirm={setShowConfirm}
+            setDeleteId={setDeleteId}
+          />
         )}
         {activePage === "create" && (
-          <CreateCertificatePage formData={formData} setFormData={setFormData} />
+          <CreateCertificatePage
+            formData={formData}
+            setFormData={setFormData}
+          />
         )}
         {activePage === "all" && <AllCertificates />}
       </div>
+
+      {/* --- Global Confirmation Modal --- */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 p-4">
+          <div className="bg-gray-800 p-6 rounded-xl max-w-sm w-full shadow-lg border border-red-600">
+            <h3 className="text-lg font-semibold mb-4 text-center text-white">
+              Are you sure you want to delete this request?
+            </h3>
+            <div className="flex justify-center gap-4">
+              <button
+                className="px-4 py-2 rounded-lg border border-gray-500 text-white hover:bg-gray-700"
+                onClick={() => setShowConfirm(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
+                onClick={confirmDelete}
+              >
+                Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- Toaster (required for toast messages) --- */}
+      <Toaster position="top-right" reverseOrder={false} />
     </div>
   );
 }

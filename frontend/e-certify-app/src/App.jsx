@@ -5,7 +5,6 @@ import SendRequest from "./components/Userpages/SendRequest";
 import UserDashboard from "./components/Userpages/UserDashboard";
 import ViewCertificates from "./components/Userpages/ViewCertificates";
 import LandingPage from "./components/LandingPage";
-import Register from "./components/Register";
 import AdminDashboard from "./components/Adminpages/Admindashboard";
 import CreateCertificatePage from "./components/Adminpages/CreateCertificatePage";
 function App() {
@@ -17,12 +16,32 @@ function App() {
 
   return (
     <Routes>
+      {/* Public Pages */}
       <Route path="/" element={<LandingPage />} />
-      <Route path="/register" element={<Register />} />
+
       <Route path="/verify/:certId" element={<Verify />} />
-      {/* Admin (Dashboard + Subpages) */}
+      {/* Admin Pages */}
       <Route path="/admin" element={<AdminDashboard />} />
       <Route path="/admin/create" element={<CreateCertificatePage />} />
+
+      {/* User Dashboard (with nested routes) */}
+      <Route
+        path="/user"
+        element={<UserDashboard username={username} onLogout={handleLogout} />}
+      >
+        {/* Default child: redirect to view-certificates */}
+        <Route index element={<Navigate to="/user" replace />} />
+
+        {/* Child pages inside dashboard */}
+        <Route
+          path="userview"
+          element={<ViewCertificates username={username} onLogout={handleLogout} />}
+        />
+        <Route
+          path="sendrequest"
+          element={<SendRequest username={username} onLogout={handleLogout} />}
+        />
+      </Route>
     </Routes>
   );
 }

@@ -5,21 +5,20 @@ import { ethers } from "ethers";
 import CertificateRegistryABI from "../contracts/CertificateRegistryABI.json";
 import { uploadCertificateToIPFS } from "../utils/ipfs.js";
 import { toast } from "react-hot-toast";
-// import jsPDF from "jspdf";
-// import * as htmlToImage from "html-to-image";
+import { FetchRequest } from "ethers";
 
 export default function CreateCertificatePage({ formData, setFormData }) {
   const [qrValue, setQrValue] = useState("");
   const certificateRef = useRef(null);
   const [certId, setCertId] = useState(null);
 
-  const showToast = (message, type = "success") => {
-    toast.custom((t) => (
+  // --- Custom toast functions with close button ---
+ const showToast = (message, type = "success") => {
+  toast.custom(
+    (t) => (
       <div
         className={`w-full sm:w-auto max-w-sm transform transition-all duration-200
-          ${
-            t.visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"
-          }`}
+          ${t.visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"}`}
       >
         <div
           className={`${
@@ -63,8 +62,9 @@ export default function CreateCertificatePage({ formData, setFormData }) {
           `}</style>
         </div>
       </div>
-    ));
-  };
+    )
+  );
+};
 
   const handleUploadAndPush = async () => {
     try {
@@ -130,28 +130,7 @@ export default function CreateCertificatePage({ formData, setFormData }) {
       ];
       for (const field of requiredFields) {
         if (!certificate[field])
-          showToast(`Missing required field: ${field}`,"error");
-      const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
-      const contract = new ethers.Contract(
-        contractAddress,
-        CertificateRegistryABI,
-        signer
-      );
-
-      const requiredFields = [
-        "certId",
-        "name",
-        "usn",
-        "courseTitle",
-        "type",
-        "start",
-        "end",
-        "issuedDate",
-        "signatory",
-      ];
-      for (const field of requiredFields) {
-        if (!certificate[field])
-          showToast(`Missing required field: ${field}`,"error");
+          showToast(`Missing required field: ${field}`, "error");
       }
       if (!ipfsUrl) showToast("Missing IPFS URL", "error");
 

@@ -27,7 +27,7 @@ export default function UserDashboard({ username, onLogout }) {
 
           <nav className="flex flex-col gap-2 mt-4 px-4">
             <NavLink
-              to="view-certificates"
+              to="userview"
               className={({ isActive }) =>
                 `px-4 py-2 rounded-lg transition ${
                   isActive

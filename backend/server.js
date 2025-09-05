@@ -3,7 +3,7 @@ const express = require("express");
 const connectDB = require("./config/db");
 const cors = require("cors");
 
-// const requestRoutes =require("./routes/requestRoutes");
+const requestRoutes =require("./routes/requestRoutes");
 const certificateRoutes = require("./routes/certificateRoutes");
 
 const app = express();
@@ -21,7 +21,7 @@ connectDB();
 
 // Routes
 app.use("/api/certificates", certificateRoutes);
-// app.use("/api/requests", requestRoutes);
+app.use("/api/requests", requestRoutes);
 
 // Default route
 app.get("/", (req, res) => res.send("Backend running"));
