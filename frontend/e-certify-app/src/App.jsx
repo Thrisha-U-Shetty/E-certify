@@ -1,14 +1,13 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-
-import Register from "./components/Register";
-import LandingPage from "./components/LandingPage";
-import AdminDashboard from "./components/Admindashboard";
-import CreateCertificatePage from "./components/CreateCertificatePage";
+import Verify from "./components/Verification/Verify";
 import SendRequest from "./components/Userpages/SendRequest";
 import UserDashboard from "./components/Userpages/UserDashboard";
 import ViewCertificates from "./components/Userpages/ViewCertificates";
-
+import LandingPage from "./components/LandingPage";
+import Register from "./components/Register";
+import AdminDashboard from "./components/Adminpages/Admindashboard";
+import CreateCertificatePage from "./components/Adminpages/CreateCertificatePage";
 function App() {
   const username = "User";
 
@@ -21,7 +20,7 @@ function App() {
       {/* Public Pages */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/register" element={<Register />} />
-
+      <Route path="/verify/:certId" element={<Verify />} />
       {/* Admin Pages */}
       <Route path="/admin" element={<AdminDashboard />} />
       <Route path="/admin/create" element={<CreateCertificatePage />} />

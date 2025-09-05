@@ -14,7 +14,7 @@ export default function SendRequest() {
 
   const [showConfirm, setShowConfirm] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [toast, setToast] = useState(false);
+  const [toast, setToast] = useState({ show: false, type: "", message: "" });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -23,17 +23,39 @@ export default function SendRequest() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // 🔑 Validate start < end date
+    if (formData.start && formData.end && new Date(formData.start) > new Date(formData.end)) {
+      setToast({
+        show: true,
+        type: "error",
+        message: "Invalid date range: Please ensure the start date is before the end date.",
+      });
+      setTimeout(() => setToast({ show: false, type: "", message: "" }), 4000);
+      return;
+    }
+
     setShowConfirm(true);
   };
 
-  const confirmSubmit = () => {
+  // 🔑 Confirm submit and send request to backend
+  const confirmSubmit = async () => {
     setShowConfirm(false);
     setIsSending(true);
 
-    setTimeout(() => {
-      const submittedData = { ...formData };
-      setIsSending(false);
+    try {
+      const response = await fetch("http://localhost:5000/api/certificates/requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
 
+      if (!response.ok) throw new Error("Failed to send request");
+
+      const data = await response.json();
+      console.log("Saved Request:", data);
+
+      // Reset form
       setFormData({
         name: "",
         usn: "",
@@ -44,11 +66,24 @@ export default function SendRequest() {
         signatory: "",
       });
 
-      console.log("Request Data:", submittedData);
-
-      setToast(true);
-      setTimeout(() => setToast(false), 4000);
-    }, 1500);
+      // Success toast
+      setToast({
+        show: true,
+        type: "success",
+        message: "Request submitted successfully!",
+      });
+      setTimeout(() => setToast({ show: false, type: "", message: "" }), 4000);
+    } catch (err) {
+      console.error("Error submitting request:", err);
+      setToast({
+        show: true,
+        type: "error",
+        message: "Something went wrong. Please try again.",
+      });
+      setTimeout(() => setToast({ show: false, type: "", message: "" }), 4000);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const signatories = {
@@ -195,35 +230,33 @@ export default function SendRequest() {
       )}
 
       {/* Toast Notification */}
-      {toast && (
+      {toast.show && (
         <div
           className="fixed z-50 px-4 top-6 inset-x-0 flex justify-center 
             sm:inset-x-auto sm:right-6 sm:justify-end"
         >
           <div
-            className="bg-green-600/90 text-white px-4 py-3 rounded-lg shadow-md flex items-center justify-between
-            w-full sm:w-auto max-w-sm text-sm sm:text-base animate-toastIn relative"
+            className={`${
+              toast.type === "success" ? "bg-green-600/90" : "bg-red-600/90"
+            } text-white px-4 py-3 rounded-lg shadow-md flex items-center justify-between
+            w-full sm:w-auto max-w-sm text-sm sm:text-base animate-toastIn relative`}
           >
             <div className="flex items-center gap-2 flex-1">
-              <svg
-                className="w-5 h-5 text-white flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-              <span className="font-medium">
-                Request submitted successfully!
-              </span>
+              {toast.type === "success" && (
+                <svg
+                  className="w-5 h-5 text-white flex-shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+              <span className="font-medium">{toast.message}</span>
             </div>
             <button
-              onClick={() => setToast(false)}
+              onClick={() => setToast({ show: false, type: "", message: "" })}
               className="ml-3 text-white/80 hover:text-white font-bold text-base"
             >
               ✕
