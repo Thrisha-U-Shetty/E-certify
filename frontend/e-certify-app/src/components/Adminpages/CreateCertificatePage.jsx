@@ -11,29 +11,81 @@ export default function CreateCertificatePage({ formData, setFormData }) {
   const certificateRef = useRef(null);
   const [certId, setCertId] = useState(null);
 
+  const showToast = (message, type = "success") => {
+    toast.custom((t) => (
+      <div
+        className={`w-full sm:w-auto max-w-sm transform transition-all duration-200
+          ${
+            t.visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"
+          }`}
+      >
+        <div
+          className={`${
+            type === "success"
+              ? "bg-green-600/90"
+              : "bg-gradient-to-r from-red-600 via-red-500 to-red-600"
+          } text-white px-4 py-3 rounded-lg shadow-md flex items-center justify-between relative overflow-hidden`}
+        >
+          {/* Message only */}
+          <span className="font-medium flex-1">{message}</span>
+
+          {/* Close button */}
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="ml-2 text-white/80 hover:text-white font-bold text-base"
+          >
+            ✕
+          </button>
+
+          {/* Progress bar (inline animation, always white) */}
+          <div
+            className="absolute bottom-0 left-0 h-0.5 bg-white/80 rounded-b"
+            style={{
+              width: "100%",
+              animation: "shrink 5s linear forwards",
+            }}
+          ></div>
+
+          {/* Keyframes (inline, injected dynamically) */}
+          <style jsx>{`
+            @keyframes shrink {
+              from {
+                transform: scaleX(1);
+                transform-origin: left;
+              }
+              to {
+                transform: scaleX(0);
+                transform-origin: left;
+              }
+            }
+          `}</style>
+        </div>
+      </div>
+    ));
+  };
+
   const handleUploadAndPush = async () => {
-  try {
-    if (!certificateRef.current)
-      throw new Error("Certificate preview not found");
-    if (!certId) throw new Error("Please generate certificate first");
+    try {
+      if (!certificateRef.current)
+        showToast("Certificate preview not found", "error");
+      if (!certId) showToast("Please generate certificate first", "error");
 
-    // 1️⃣ Upload PDF to IPFS
-    const ipfsUrl = await uploadCertificateToIPFS(certificateRef, certId);
-    console.log("✅ Uploaded to IPFS:", ipfsUrl);
+      const ipfsUrl = await uploadCertificateToIPFS(certificateRef, certId);
+      showToast("Uploaded to IPFS", "success");
 
-    // 2️⃣ Fetch certificate metadata from backend DB
-    const response = await fetch(
-      `http://localhost:5000/api/certificates/${certId}`
-    );
-    if (!response.ok) throw new Error("Failed to fetch certificate from DB");
+      const response = await fetch(
+        `http://localhost:5000/api/certificates/${certId}`
+      );
+      if (!response.ok)
+        showToast("Failed to fetch certificate from DB", "error");
 
-    const data = await response.json();
-    if (!data.success) throw new Error(data.message || "Certificate not found");
+      const data = await response.json();
+      if (!data.success)
+        showToast(data.message || "Certificate not found", "error");
 
     const certificate = data.cert;
 
-    // 3️⃣ Connect to MetaMask and ensure correct chain
-    if (!window.ethereum) throw new Error("MetaMask not detected");
+      if (!window.ethereum) showToast("MetaMask not detected", "error");
 
     const rpcProvider = new ethers.JsonRpcProvider(import.meta.env.VITE_TENDERLY_RPC);
     const actualChainId = await rpcProvider.send("eth_chainId", []);
@@ -57,55 +109,50 @@ export default function CreateCertificatePage({ formData, setFormData }) {
     const userAddress = await signer.getAddress();
     console.log("👛 Connected wallet:", userAddress);
 
-    // 4️⃣ Setup contract
-    const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
-    const contract = new ethers.Contract(contractAddress, CertificateRegistryABI, signer);
+      const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
+      const contract = new ethers.Contract(
+        contractAddress,
+        CertificateRegistryABI,
+        signer
+      );
 
-    // 5️⃣ Validate required fields
-    const requiredFields = [
-      "certId",
-      "name",
-      "usn",
-      "courseTitle",
-      "type",
-      "start",
-      "end",
-      "issuedDate",
-      "signatory",
-    ];
-    for (const field of requiredFields) {
-      if (!certificate[field]) {
-        throw new Error(`❌ Missing required field: ${field}`);
+      const requiredFields = [
+        "certId",
+        "name",
+        "usn",
+        "courseTitle",
+        "type",
+        "start",
+        "end",
+        "issuedDate",
+        "signatory",
+      ];
+      for (const field of requiredFields) {
+        if (!certificate[field])
+          showToast(`Missing required field: ${field}`,"error");
       }
+      if (!ipfsUrl) showToast("Missing IPFS URL", "error");
+
+      const loadingToastId = toast.loading("Transaction sending...");
+      const tx = await contract.storeCertificate(
+        String(certificate.certId),
+        String(certificate.name),
+        String(certificate.usn),
+        String(certificate.courseTitle),
+        String(certificate.type),
+        new Date(certificate.start).toISOString(),
+        new Date(certificate.end).toISOString(),
+        new Date(certificate.issuedDate).toISOString(),
+        String(certificate.signatory),
+        String(ipfsUrl)
+      );
+      await tx.wait();
+      toast.dismiss(loadingToastId);
+    } catch (err) {
+      toast.dismiss();
+      showToast(err.message, "error");
     }
-    if (!ipfsUrl) throw new Error("❌ Missing IPFS URL");
-
-    // 6️⃣ Send transaction
-    const tx = await contract.storeCertificate(
-      String(certificate.certId),
-      String(certificate.name),
-      String(certificate.usn),
-      String(certificate.courseTitle),
-      String(certificate.type),
-      new Date(certificate.start).toISOString(),
-      new Date(certificate.end).toISOString(),
-      new Date(certificate.issuedDate).toISOString(),
-      String(certificate.signatory),
-      String(ipfsUrl)
-    );
-
-    console.log("⏳ Transaction sent:", tx.hash);
-    await tx.wait();
-    console.log("🎉 Certificate stored on blockchain!");
-
-    alert(`✅ Certificate stored!\nIPFS: ${ipfsUrl}\nTx: ${tx.hash}`);
-  } catch (err) {
-    console.error(err);
-    alert("❌ Failed: " + err.message);
-  }
-};
-
-  
+  };
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -126,13 +173,12 @@ export default function CreateCertificatePage({ formData, setFormData }) {
         const frontendBaseURL = import.meta.env.VITE_FRONTEND_BASE_URL;
         const fullUrl = `${frontendBaseURL}/verify/${data.certId}`;
         setQrValue(fullUrl);
-        alert(`Certificate created! Certificate ID: ${data.certId}`);
+        showToast("Certificate created!", "success");
       } else {
-        alert(data.message || "Failed to create certificate");
+        showToast(data.message || "Failed to create certificate", "error");
       }
     } catch (err) {
-      console.error(err);
-      alert("Server error");
+      showToast(err.message, "error");
     }
   };
 
@@ -208,216 +254,220 @@ export default function CreateCertificatePage({ formData, setFormData }) {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6 bg-gradient-to-br from-indigo-50 via-white to-indigo-100 rounded-2xl shadow-lg">
-      {/* --- Left side: Form --- */}
-      <div className="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow">
-        <h2 className="text-xl font-bold text-indigo-700 mb-4">
-          Create Certificate
-        </h2>
-        <form className="space-y-4">
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            placeholder="Recipient Name"
-            maxLength={50}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400"
-          />
-          <input
-            type="text"
-            name="usn"
-            value={formData.usn}
-            onChange={handleChange}
-            placeholder="USN"
-            maxLength={10}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400"
-          />
-          <input
-            type="text"
-            name="courseTitle"
-            value={formData.courseTitle}
-            onChange={handleChange}
-            placeholder="Course Title"
-            maxLength={70}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400"
-          />
-          <select
-            name="type"
-            value={formData.type}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400"
-          >
-            <option value="">Select Type</option>
-            <option value="Workshop">Workshop</option>
-            <option value="Hackathon">Hackathon</option>
-            <option value="Technical Event">Technical Event</option>
-            <option value="Cultural Event">Cultural Event</option>
-          </select>
-          <input
-            type={formData.start ? "date" : "text"}
-            name="start"
-            value={formData.start}
-            onChange={handleChange}
-            placeholder="Start Date"
-            onFocus={(e) => (e.target.type = "date")}
-            onBlur={(e) => {
-              if (!formData.start) e.target.type = "text";
-            }}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400"
-          />
-          <input
-            type={formData.end ? "date" : "text"}
-            name="end"
-            value={formData.end}
-            onChange={handleChange}
-            placeholder="End Date"
-            onFocus={(e) => (e.target.type = "date")}
-            onBlur={(e) => {
-              if (!formData.end) e.target.type = "text";
-            }}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400"
-          />
-          <input
-            type={formData.issuedDate ? "date" : "text"}
-            name="issuedDate"
-            value={formData.issuedDate}
-            onChange={handleChange}
-            placeholder="Issued Date"
-            onFocus={(e) => (e.target.type = "date")}
-            onBlur={(e) => {
-              if (!formData.issuedDate) e.target.type = "text";
-            }}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400"
-          />
-          <select
-            name="signatory"
-            value={formData.signatory}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400"
-          >
-            <option value="">Select Signatory</option>
-            <option value="cultural">Cultural Coordinator</option>
-            <option value="technical">Technical Coordinator</option>
-            <option value="hod">HOD</option>
-            <option value="principal">Principal</option>
-          </select>
+    <>
+      <Toaster position="bottom-right" gutter={8} />
+      <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
+          {/* --- Left side: Form --- */}
+          <div className="bg-gray-900/70 backdrop-blur-lg p-6 rounded-2xl shadow-2xl">
+            <h2 className="text-2xl font-extrabold text-green-400 mb-4">
+              Create Certificate
+            </h2>
+            <form className="space-y-4">
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="Recipient Name"
+                maxLength={50}
+                className="w-full px-4 py-2 bg-gray-800 text-white border border-green-500/40 rounded-lg focus:ring-2 focus:ring-green-400"
+              />
+              <input
+                type="text"
+                name="usn"
+                value={formData.usn}
+                onChange={handleChange}
+                placeholder="USN"
+                maxLength={10}
+                className="w-full px-4 py-2 bg-gray-800 text-white border border-green-500/40 rounded-lg focus:ring-2 focus:ring-green-400"
+              />
+              <input
+                type="text"
+                name="courseTitle"
+                value={formData.courseTitle}
+                onChange={handleChange}
+                placeholder="Course Title"
+                maxLength={70}
+                className="w-full px-4 py-2 bg-gray-800 text-white border border-green-500/40 rounded-lg focus:ring-2 focus:ring-green-400"
+              />
+              <select
+                name="type"
+                value={formData.type}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-gray-800 text-gray-200 border border-green-500/40 rounded-lg focus:ring-2 focus:ring-green-400"
+              >
+                <option value="">Select Type</option>
+                <option value="Workshop">Workshop</option>
+                <option value="Hackathon">Hackathon</option>
+                <option value="Technical Event">Technical Event</option>
+                <option value="Cultural Event">Cultural Event</option>
+              </select>
+              <input
+                type={formData.start ? "date" : "text"}
+                name="start"
+                value={formData.start}
+                onChange={handleChange}
+                placeholder="Start Date"
+                onFocus={(e) => (e.target.type = "date")}
+                onBlur={(e) => {
+                  if (!formData.start) e.target.type = "text";
+                }}
+                className="w-full px-4 py-2 bg-gray-800 text-white border border-green-500/40 rounded-lg focus:ring-2 focus:ring-green-400"
+              />
+              <input
+                type={formData.end ? "date" : "text"}
+                name="end"
+                value={formData.end}
+                onChange={handleChange}
+                placeholder="End Date"
+                onFocus={(e) => (e.target.type = "date")}
+                onBlur={(e) => {
+                  if (!formData.end) e.target.type = "text";
+                }}
+                className="w-full px-4 py-2 bg-gray-800 text-white border border-green-500/40 rounded-lg focus:ring-2 focus:ring-green-400"
+              />
+              <input
+                type={formData.issuedDate ? "date" : "text"}
+                name="issuedDate"
+                value={formData.issuedDate}
+                onChange={handleChange}
+                placeholder="Issued Date"
+                onFocus={(e) => (e.target.type = "date")}
+                onBlur={(e) => {
+                  if (!formData.issuedDate) e.target.type = "text";
+                }}
+                className="w-full px-4 py-2 bg-gray-800 text-white border border-green-500/40 rounded-lg focus:ring-2 focus:ring-green-400"
+              />
+              <select
+                name="signatory"
+                value={formData.signatory}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-gray-800 text-gray-200 border border-green-500/40 rounded-lg focus:ring-2 focus:ring-green-400"
+              >
+                <option value="">Select Signatory</option>
+                <option value="cultural">Cultural Coordinator</option>
+                <option value="technical">Technical Coordinator</option>
+                <option value="hod">HOD</option>
+                <option value="principal">Principal</option>
+              </select>
 
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={handleGenerateQR}
-              className="w-1/4 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-            >
-              Generate QR
-            </button>
-            <button
-              type="button"
-              onClick={handleUploadAndPush}
-              className="w-1/4 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
-            >
-              Add to Blockchain
-            </button>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={handleGenerateQR}
+                  className="w-full sm:w-1/2 px-6 py-3 bg-green-600 text-white rounded-lg shadow hover:bg-green-700"
+                >
+                  Generate QR
+                </button>
+                <button
+                  type="button"
+                  onClick={handleUploadAndPush}
+                  className="w-full sm:w-1/2 px-6 py-3 bg-green-600 text-white rounded-lg shadow hover:bg-green-700"
+                >
+                  Add to Blockchain
+                </button>
+              </div>
+            </form>
           </div>
-        </form>
-      </div>
 
-      {/* --- Right side: Certificate Preview --- */}
-      <div
-        ref={certificateRef}
-        className="certificate-preview text-[9px] sm:text-[11px] md:text-[13px] lg:text-[15px]"
-      >
-        <div
-          className="bg-white/80 backdrop-blur-lg shadow-md rounded-lg 
-               p-3 sm:p-4 md:p-5 
-               border border-indigo-200 w-full flex flex-col justify-between overflow-hidden"
-          style={{ fontFamily: "Times New Roman, Times, serif" }}
-        >
-          <div className="w-11/12 mx-auto flex flex-col justify-between h-full">
-            {/* Logo */}
-            <div className="flex justify-between items-center mb-3 sm:mb-4 md:mb-5">
-              <img src="../AJIET.png" alt="AJIET" />
-            </div>
+          {/* --- Right side: Certificate Preview --- */}
+          <div
+            ref={certificateRef}
+            className="certificate-preview text-[9px] sm:text-[11px] md:text-[13px] lg:text-[15px]"
+          >
+            <div
+              className="bg-white shadow-lg rounded-xl p-4 border border-gray-300"
+              style={{ fontFamily: "Times New Roman, Times, serif" }}
+            >
+              <div className="w-11/12 mx-auto flex flex-col justify-between h-full">
+                <div className="flex justify-center items-center">
+                  <img src="../AJIET.png" alt="AJIET" className="mb-5" />
+                </div>
 
-            {/* Certificate Text */}
-            <div className="text-center px-1 sm:px-3">
-              <h3 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-gray-800 mb-2">
-                CERTIFICATE OF ACHIEVEMENT
-              </h3>
-              <p className="text-[8px] sm:text-[10px] md:text-[12px] lg:text-[14px] text-gray-700 leading-snug">
-                This certificate is awarded to{" "}
-                <span className="font-semibold">
-                  {formData.name || "Recipient Name"}
-                </span>{" "}
-                bearing USN{" "}
-                <span className="font-semibold">
-                  {formData.usn || "Roll No"}
-                </span>{" "}
-                {formData.type === "Workshop" ? (
-                  <>
-                    for successfully completing{" "}
-                    <span className="font-semibold">
-                      {formData.courseTitle || "Course Title"}
+                <div className="text-center px-3 italic">
+                  <h3 className="text-base md:text-lg lg:text-xl font-bold text-gray-800 mb-2">
+                    CERTIFICATE OF ACHIEVEMENT
+                  </h3>
+                  <p className="text-gray-700 leading-snug">
+                    This certificate is awarded to{" "}
+                    <span className="font-semibold text-black">
+                      {formData.name || "Recipient Name"}
                     </span>{" "}
-                    <span className="font-medium">{formData.type}</span>
-                  </>
-                ) : (
-                  <>
-                    for participating in{" "}
-                    <span className="font-semibold">
-                      {formData.courseTitle || "Event Title"}
+                    bearing USN{" "}
+                    <span className="font-semibold text-black">
+                      {formData.usn || "Roll No"}
                     </span>{" "}
-                    <span className="font-medium">{formData.type}</span>
-                  </>
-                )}{" "}
-                from {formData.start || "Start Date"} to{" "}
-                {formData.end || "End Date"}.
-              </p>
-              {formData.issuedDate && (
-                <p className="mt-1 sm:mt-2 md:mt-3 text-gray-600 text-[8px] sm:text-[10px] md:text-[11px]">
-                  Issued on: {formData.issuedDate}
-                </p>
-              )}
-            </div>
+                    {formData.type === "Workshop" ? (
+                      <>
+                        for successfully completing{" "}
+                        <span className="font-semibold text-black">
+                          {formData.courseTitle || "Course Title"}
+                        </span>{" "}
+                        <span className="font-medium">{formData.type}</span>
+                      </>
+                    ) : (
+                      <>
+                        for participating in{" "}
+                        <span className="font-semibold text-black">
+                          {formData.courseTitle || "Event Title"}
+                        </span>{" "}
+                        <span className="font-medium">{formData.type}</span>
+                      </>
+                    )}{" "}
+                    from {formData.start || "Start Date"} to{" "}
+                    {formData.end || "End Date"}.
+                  </p>
+                  {formData.issuedDate && (
+                    <p className="mt-2 text-gray-600 text-sm">
+                      Issued on: {formData.issuedDate}
+                    </p>
+                  )}
+                </div>
 
-            {/* QR + Signature */}
-            <div className="mt-3 sm:mt-4 md:mt-5 flex justify-between items-end px-2 sm:px-3">
-              {/* QR */}
-              <div className="flex flex-col items-center">
-                <div className="w-14 h-14 sm:w-18 sm:h-18 md:w-20 md:h-20 mb-1">
-                  {qrValue ? (
-                    <QRCodeSVG value={qrValue} className="w-full h-full" />
-                  ) : (
-                    <div className="w-full h-full border-2 border-dashed border-indigo-400 flex items-center justify-center text-gray-500 text-[7px] sm:text-[9px]">
-                      QR Placeholder
+                <div className="mt-5 flex justify-between items-end px-3">
+                  <div className="flex flex-col items-center">
+                    <div className="w-20 h-20 mb-1">
+                      {qrValue ? (
+                        <QRCodeSVG value={qrValue} className="w-full h-full" />
+                      ) : (
+                        <div className="w-full h-full border-2 border-dashed border-gray-500 flex items-center justify-center text-gray-500 text-xs">
+                          QR
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-[9px] text-gray-600 italic">
+                      Scan QR to verify certificate
+                    </p>
+                    {certId && (
+                      <p className="mt-1 text-[9px] text-gray-600 italic">
+                        Certificate ID:{" "}
+                        <span className="font-bold text-black">{certId}</span>
+                      </p>
+                    )}
+                  </div>
+
+                  {formData.signatory && signatories[formData.signatory] && (
+                    <div className="text-right italic">
+                      <img
+                        src={signatories[formData.signatory].signature}
+                        alt="Signature"
+                        className="w-24 h-9 mx-auto mb-1 object-contain"
+                      />
+                      <p className="font-medium text-black text-sm text-center">
+                        {signatories[formData.signatory].name}
+                      </p>
+                      <p className="text-gray-600 text-xs text-center">
+                        {signatories[formData.signatory].designation}
+                      </p>
                     </div>
                   )}
                 </div>
-                <p className="text-[7px] sm:text-[8px] md:text-[9px] font-medium text-gray-700 mt-1">
-                  Scan to Verify Certificate
-                </p>
               </div>
-
-              {/* Signature */}
-              {formData.signatory && signatories[formData.signatory] && (
-                <div className="text-right">
-                  <img
-                    src={signatories[formData.signatory].signature}
-                    alt="Signature"
-                    className="w-18 sm:w-20 md:w-24 h-7 sm:h-8 md:h-9 mx-auto mb-1 object-contain"
-                  />
-                  <p className="font-medium text-gray-800 text-[8px] sm:text-[10px] md:text-[11px] text-center">
-                    {signatories[formData.signatory].name}
-                  </p>
-                  <p className="text-gray-600 text-[6px] sm:text-[8px] md:text-[9px] text-center">
-                    {signatories[formData.signatory].designation}
-                  </p>
-                </div>
-              )}
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
