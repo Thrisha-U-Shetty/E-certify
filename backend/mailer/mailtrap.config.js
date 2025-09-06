@@ -8,12 +8,12 @@ export const mailtrapClient = new MailtrapClient({
 	token: process.env.MAIL_TRAP_TOKEN,
 });
 
-export const sender = {
-  email: "hello@demomailtrap.co",
-  name: "E-certify",
-};
-
 // export const sender = {
-//   email: "no-reply@ecertify.rf.gd",  // use your verified domain
-//   name: "E-Certify",
+//   email: "hello@demomailtrap.co",
+//   name: "E-certify",
 // };
+
+export const sender = {
+  email: "no-reply@ecertify.rf.gd",  // use your verified domain
+  name: "E-Certify",
+};

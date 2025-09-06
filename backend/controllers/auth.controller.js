@@ -1,15 +1,17 @@
 import bcryptjs from "bcryptjs";
 import crypto from "crypto";
+import jwt from "jsonwebtoken";
 
-import { generateTokenAndSetCookie } from "../utils/generateTokenAndSetCookie.js";
+import { generateToken } from "../utils/generateToken.js";
 import {
 	sendPasswordResetEmail,
 	sendResetSuccessEmail,
 	sendVerificationEmail,
-    // sendWelcomeEmail,
-} from "../mailtrap/emails.js";
+	// sendWelcomeEmail,
+} from "../mailer/emails.js"; // <-- now uses Brevo
 import { User } from "../models/user.model.js";
 
+// ----------------- SIGNUP -----------------
 export const signup = async (req, res) => {
 	const { email, password, name } = req.body;
 
@@ -19,8 +21,6 @@ export const signup = async (req, res) => {
 		}
 
 		const userAlreadyExists = await User.findOne({ email });
-		console.log("userAlreadyExists", userAlreadyExists);
-
 		if (userAlreadyExists) {
 			return res.status(400).json({ success: false, message: "User already exists" });
 		}
@@ -38,24 +38,27 @@ export const signup = async (req, res) => {
 
 		await user.save();
 
-		// jwt
-		generateTokenAndSetCookie(res, user._id);
+		// Set cookie with JWT (optional if you want cookie-based auth)
+		generateToken(user._id);
 
+		// Send Brevo email
 		await sendVerificationEmail(user.email, verificationToken);
 
 		res.status(201).json({
 			success: true,
-			message: "User created successfully",
+			message: "User created successfully. Verification email sent.",
 			user: {
 				...user._doc,
 				password: undefined,
 			},
 		});
 	} catch (error) {
+		console.error("Error in signup:", error);
 		res.status(400).json({ success: false, message: error.message });
 	}
 };
 
+// ----------------- VERIFY EMAIL -----------------
 export const verifyEmail = async (req, res) => {
 	const { code } = req.body;
 	try {
@@ -72,7 +75,10 @@ export const verifyEmail = async (req, res) => {
 		user.verificationToken = undefined;
 		user.verificationTokenExpiresAt = undefined;
 		await user.save();
-        // await sendWelcomeEmail(user.email, user.name);
+
+		// Optional welcome email
+		// await sendWelcomeEmail(user.email, user.name);
+
 		res.status(200).json({
 			success: true,
 			message: "Email verified successfully",
@@ -82,11 +88,12 @@ export const verifyEmail = async (req, res) => {
 			},
 		});
 	} catch (error) {
-		console.log("error in verifyEmail ", error);
+		console.error("Error in verifyEmail:", error);
 		res.status(500).json({ success: false, message: "Server error" });
 	}
 };
 
+// ----------------- LOGIN -----------------
 export const login = async (req, res) => {
 	const { email, password } = req.body;
 	try {
@@ -94,12 +101,14 @@ export const login = async (req, res) => {
 		if (!user) {
 			return res.status(400).json({ success: false, message: "Invalid credentials" });
 		}
+
 		const isPasswordValid = await bcryptjs.compare(password, user.password);
 		if (!isPasswordValid) {
 			return res.status(400).json({ success: false, message: "Invalid credentials" });
 		}
 
-		generateTokenAndSetCookie(res, user._id);
+		// JWT token
+		const token = generateToken(user._id);
 
 		user.lastLogin = new Date();
 		await user.save();
@@ -111,46 +120,46 @@ export const login = async (req, res) => {
 				...user._doc,
 				password: undefined,
 			},
+			token, // frontend saves this
 		});
 	} catch (error) {
-		console.log("Error in login ", error);
+		console.error("Error in login:", error);
 		res.status(400).json({ success: false, message: error.message });
 	}
 };
 
+// ----------------- LOGOUT -----------------
 export const logout = async (req, res) => {
 	res.clearCookie("token");
 	res.status(200).json({ success: true, message: "Logged out successfully" });
 };
 
+// ----------------- FORGOT PASSWORD -----------------
 export const forgotPassword = async (req, res) => {
 	const { email } = req.body;
 	try {
 		const user = await User.findOne({ email });
-
 		if (!user) {
 			return res.status(400).json({ success: false, message: "User not found" });
 		}
 
-		// Generate reset token
+		// Reset token
 		const resetToken = crypto.randomBytes(20).toString("hex");
-		const resetTokenExpiresAt = Date.now() + 1 * 60 * 60 * 1000; // 1 hour
-
 		user.resetPasswordToken = resetToken;
-		user.resetPasswordExpiresAt = resetTokenExpiresAt;
-
+		user.resetPasswordExpiresAt = Date.now() + 1 * 60 * 60 * 1000; // 1 hour
 		await user.save();
 
-		// send email
+		// Send Brevo email
 		await sendPasswordResetEmail(user.email, `${process.env.CLIENT_URL}/reset-password/${resetToken}`);
 
 		res.status(200).json({ success: true, message: "Password reset link sent to your email" });
 	} catch (error) {
-		console.log("Error in forgotPassword ", error);
+		console.error("Error in forgotPassword:", error);
 		res.status(400).json({ success: false, message: error.message });
 	}
 };
 
+// ----------------- RESET PASSWORD -----------------
 export const resetPassword = async (req, res) => {
 	try {
 		const { token } = req.params;
@@ -165,7 +174,7 @@ export const resetPassword = async (req, res) => {
 			return res.status(400).json({ success: false, message: "Invalid or expired reset token" });
 		}
 
-		// update password
+		// Hash new password
 		const hashedPassword = await bcryptjs.hash(password, 10);
 
 		user.password = hashedPassword;
@@ -173,25 +182,31 @@ export const resetPassword = async (req, res) => {
 		user.resetPasswordExpiresAt = undefined;
 		await user.save();
 
+		// Send Brevo email
 		await sendResetSuccessEmail(user.email);
 
 		res.status(200).json({ success: true, message: "Password reset successful" });
 	} catch (error) {
-		console.log("Error in resetPassword ", error);
+		console.error("Error in resetPassword:", error);
 		res.status(400).json({ success: false, message: error.message });
 	}
 };
 
+// ----------------- CHECK AUTH -----------------
 export const checkAuth = async (req, res) => {
 	try {
 		const user = await User.findById(req.userId).select("-password");
+
 		if (!user) {
-			return res.status(400).json({ success: false, message: "User not found" });
+			return res.status(404).json({ success: false, message: "User not found" });
 		}
 
-		res.status(200).json({ success: true, user });
+		res.status(200).json({
+			success: true,
+			user,
+		});
 	} catch (error) {
-		console.log("Error in checkAuth ", error);
-		res.status(400).json({ success: false, message: error.message });
+		console.error("Error in checkAuth:", error);
+		res.status(500).json({ success: false, message: "Internal server error" });
 	}
 };
