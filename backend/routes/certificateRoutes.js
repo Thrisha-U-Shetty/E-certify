@@ -82,13 +82,26 @@ router.post("/check-duplicate", async (req, res) => {
         message: "Certificate already exists with the same details",
       });
     }
+    
+    const existingSameCourseType = await Certificate.findOne({
+      name,
+      courseTitle,
+      type,
+    });
+
+    if (existingSameCourseType) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "This person already has a certificate for the same course and type",
+      });
+    }
 
     res.json({ success: true, message: "No duplicate found" });
   } catch (err) {
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
-
 
 router.post("/upload", async (req, res) => {
   try {
