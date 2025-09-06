@@ -40,8 +40,8 @@ export default function AllCertificates() {
     setFilteredCertificates(results);
   }, [searchTerm, certificates]);
 
-  if (loading) return <p className="p-6 text-gray-300">Loading certificates...</p>;
-  if (error) return <p className="p-6 text-red-400">{error}</p>;
+  if (loading) return <p className="text-gray-400 text-center mt-6 text-sm sm:text-base">Loading certificates...</p>;
+  if (error) return <p className="text-gray-400 text-center mt-15 text-sm sm:text-base">{error}</p>;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black p-8">

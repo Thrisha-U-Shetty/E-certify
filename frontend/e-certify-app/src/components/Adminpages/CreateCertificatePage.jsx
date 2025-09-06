@@ -10,74 +10,72 @@ export default function CreateCertificatePage({ formData, setFormData }) {
   const [qrValue, setQrValue] = useState("");
   const certificateRef = useRef(null);
   const [certId, setCertId] = useState(null);
+  const [isPushing, setIsPushing] = useState(false); // ✅ loading state
 
-  // --- Custom toast functions with close button ---
-const showToast = (message, type = "success") => {
-  toast.custom((t) => (
-    <div
-      className={`w-full sm:w-auto max-w-sm transform transition-all duration-200
-        ${t.visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"}`}
-    >
+  // --- Custom toast ---
+  const showToast = (message, type = "success") => {
+    toast.custom((t) => (
       <div
-        className={`${
-          type === "success"
-            ? "bg-gradient-to-r from-green-700/90 via-green-600/90 to-green-500/90"
-            : "bg-gradient-to-r from-red-600 via-red-500 to-red-600"
-        } text-white px-4 py-3 rounded-lg shadow-md flex items-center justify-between relative overflow-hidden`}
+        className={`w-full sm:w-auto max-w-sm transform transition-all duration-200
+          ${
+            t.visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"
+          }`}
       >
-        {/* ✅ Success Icon (only for success type) */}
-        {type === "success" && (
-          <svg
-            className="w-5 h-5 text-white mr-2 flex-shrink-0"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-        )}
-
-        {/* Message */}
-        <span className="font-medium flex-1">{message}</span>
-
-        {/* Close button */}
-        <button
-          onClick={() => toast.dismiss(t.id)}
-          className="ml-2 text-white/80 hover:text-white font-bold text-base"
-        >
-          ✕
-        </button>
-
-        {/* Progress bar */}
         <div
-          className="absolute bottom-0 left-0 h-0.5 bg-white/80 rounded-b"
-          style={{
-            width: "100%",
-            animation: "shrink 5s linear forwards",
-          }}
-        ></div>
+          className={`${
+            type === "success"
+              ? "bg-gradient-to-r from-green-700/90 via-green-600/90 to-green-500/90"
+              : "bg-gradient-to-r from-red-600 via-red-500 to-red-600"
+          } text-white px-4 py-3 rounded-lg shadow-md flex items-center justify-between relative overflow-hidden`}
+        >
+          {type === "success" && (
+            <svg
+              className="w-5 h-5 text-white mr-2 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          )}
 
-        <style>{`
-          @keyframes shrink {
-            from { transform: scaleX(1); transform-origin: left; }
-            to { transform: scaleX(0); transform-origin: left; }
-          }
-        `}</style>
+          <span className="font-medium flex-1">{message}</span>
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="ml-2 text-white/80 hover:text-white font-bold text-base"
+          >
+            ✕
+          </button>
+
+          <div
+            className="absolute bottom-0 left-0 h-0.5 bg-white/80 rounded-b"
+            style={{ width: "100%", animation: "shrink 5s linear forwards" }}
+          ></div>
+          <style>{`
+            @keyframes shrink {
+              from { transform: scaleX(1); transform-origin: left; }
+              to { transform: scaleX(0); transform-origin: left; }
+            }
+          `}</style>
+        </div>
       </div>
-    </div>
-  ));
-};
+    ));
+  };
 
+  // --- Upload + Push to blockchain ---
   const handleUploadAndPush = async () => {
     try {
+      setIsPushing(true); // ✅ start loading
+
       if (!certificateRef.current)
-        showToast("Certificate preview not found", "error");
-      if (!certId) showToast("Please generate certificate first", "error");
+        return showToast("Certificate preview not found", "error");
+      if (!certId)
+        return showToast("Please generate certificate first", "error");
 
       const ipfsUrl = await uploadCertificateToIPFS(certificateRef, certId);
       showToast("Uploaded PDF", "success");
@@ -86,15 +84,14 @@ const showToast = (message, type = "success") => {
         `http://localhost:5000/api/certificates/${certId}`
       );
       if (!response.ok)
-        showToast("Failed to fetch certificate from DB", "error");
+        return showToast("Failed to fetch certificate from DB", "error");
 
       const data = await response.json();
       if (!data.success)
-        showToast(data.message || "Certificate not found", "error");
+        return showToast(data.message || "Certificate not found", "error");
 
       const certificate = data.cert;
-
-      if (!window.ethereum) showToast("MetaMask not detected", "error");
+      if (!window.ethereum) return showToast("MetaMask not detected", "error");
 
       const rpcProvider = new ethers.JsonRpcProvider(
         import.meta.env.VITE_TENDERLY_RPC
@@ -124,24 +121,6 @@ const showToast = (message, type = "success") => {
         signer
       );
 
-      const requiredFields = [
-        "certId",
-        "name",
-        "usn",
-        "courseTitle",
-        "type",
-        "start",
-        "end",
-        "issuedDate",
-        "signatory",
-      ];
-      for (const field of requiredFields) {
-        if (!certificate[field])
-          showToast(`Missing required field: ${field}`, "error");
-      }
-      if (!ipfsUrl) showToast("Missing IPFS URL", "error");
-
-      const loadingToastId = toast.loading("Transaction sending...");
       const tx = await contract.storeCertificate(
         String(certificate.certId),
         String(certificate.name),
@@ -155,19 +134,62 @@ const showToast = (message, type = "success") => {
         String(ipfsUrl)
       );
       await tx.wait();
-      toast.dismiss(loadingToastId);
+
       showToast("Certificate added to blockchain", "success");
+
+      // ✅ Auto clear after success
+      setFormData({
+        name: "",
+        usn: "",
+        courseTitle: "",
+        type: "",
+        start: "",
+        end: "",
+        issuedDate: "",
+        signatory: "",
+      });
+      setQrValue("");
+      setCertId(null);
     } catch (err) {
-      toast.dismiss();
       showToast(err.message, "error");
+    } finally {
+      setIsPushing(false); // ✅ stop loading
     }
   };
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
+  // --- Generate QR with duplicate check ---
+  // --- Generate QR with duplicate check ---
   const handleGenerateQR = async () => {
     try {
+      // 1️⃣ Duplicate check before creating certificate
+      const duplicateCheckRes = await fetch(
+        `http://localhost:5000/api/certificates/check-duplicate`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: formData.name,
+            courseTitle: formData.courseTitle,
+            type: formData.type,
+            start: formData.start,
+            end: formData.end,
+          }),
+        }
+      );
+      const duplicateData = await duplicateCheckRes.json();
+
+      if (!duplicateData.success) {
+        // Stop everything if duplicate exists
+        return showToast(
+          duplicateData.message || "Duplicate certificate exists",
+          "error"
+        );
+      }
+
+      // 2️⃣ Proceed to create certificate only if no duplicate
       const response = await fetch(
         "http://localhost:5000/api/certificates/create",
         {
@@ -176,6 +198,7 @@ const showToast = (message, type = "success") => {
           body: JSON.stringify(formData),
         }
       );
+
       const data = await response.json();
 
       if (data.success) {
@@ -191,54 +214,6 @@ const showToast = (message, type = "success") => {
       showToast(err.message, "error");
     }
   };
-
-  // // --- UPDATED: high-resolution PDF download ---
-  // const handleDownloadPDF = async () => {
-  //   if (!certificateRef.current) return alert("Certificate preview not found");
-
-  //   try {
-  //     // Fixed PDF size: Letter (8.5 x 11 inches) at 72 DPI
-  //     const pdfWidth = 612;
-  //     const pdfHeight = 792;
-
-  //     // Convert certificate DOM to PNG
-  //     const dataUrl = await htmlToImage.toPng(certificateRef.current, {
-  //       backgroundColor: "#ffffff",
-  //       pixelRatio: 3,
-  //       style: {
-  //         transform: "scale(1)",
-  //         transformOrigin: "top left",
-  //         overflow: "hidden",
-  //       },
-  //     });
-
-  //     // Create PDF (Letter size, portrait orientation)
-  //     const pdf = new jsPDF({
-  //       orientation: "portrait", // change to "landscape" if you prefer
-  //       unit: "px",
-  //       format: [pdfWidth, pdfHeight],
-  //     });
-
-  //     // Scale the image proportionally to fit inside Letter page
-  //     const img = new Image();
-  //     img.src = dataUrl;
-  //     await new Promise((resolve) => (img.onload = resolve));
-
-  //     const ratio = Math.min(pdfWidth / img.width, pdfHeight / img.height);
-  //     const imgWidth = img.width * ratio;
-  //     const imgHeight = img.height * ratio;
-
-  //     const x = (pdfWidth - imgWidth) / 2; // center horizontally
-  //     const y = (pdfHeight - imgHeight) / 2; // center vertically
-
-  //     pdf.addImage(dataUrl, "PNG", x, y, imgWidth, imgHeight);
-
-  //     pdf.save(`${formData.name || "certificate"}.pdf`);
-  //   } catch (err) {
-  //     console.error("PDF generation/download error:", err);
-  //     alert("Failed to generate PDF");
-  //   }
-  // };
 
   const signatories = {
     cultural: {
@@ -274,6 +249,7 @@ const showToast = (message, type = "success") => {
               Create Certificate
             </h2>
             <form className="space-y-4">
+              {/* --- Inputs unchanged --- */}
               <input
                 type="text"
                 name="name"
@@ -373,9 +349,33 @@ const showToast = (message, type = "success") => {
                 <button
                   type="button"
                   onClick={handleUploadAndPush}
-                  className="w-full sm:w-1/2 px-6 py-3 bg-green-600 text-white rounded-lg shadow hover:bg-green-700"
+                  disabled={isPushing}
+                  className="w-full sm:w-1/2 px-6 py-3 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 flex items-center justify-center"
                 >
-                  Add to Blockchain
+                  {isPushing ? (
+                    <svg
+                      className="animate-spin h-5 w-5 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                      ></path>
+                    </svg>
+                  ) : (
+                    "Add to Blockchain"
+                  )}
                 </button>
               </div>
             </form>

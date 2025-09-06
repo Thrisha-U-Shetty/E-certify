@@ -1,5 +1,5 @@
 import { Toaster } from "react-hot-toast";
-import { EyeIcon, ClipboardIcon, TrashIcon } from "@heroicons/react/24/solid";
+import { EyeIcon, ClipboardIcon, TrashIcon, CheckIcon } from "@heroicons/react/24/solid";
 import { useState } from "react";
 
 export default function UserRequests({
@@ -8,6 +8,7 @@ export default function UserRequests({
   copyRequestToForm,
   setShowConfirm,
   setDeleteId,
+  approveRequest,   // ✅ added
 }) {
   const [expanded, setExpanded] = useState(null);
 
@@ -45,30 +46,22 @@ export default function UserRequests({
                     {expanded === req._id && (
                       <div className="mt-2 sm:mt-3 text-xs sm:text-sm text-gray-200 space-y-1">
                         <p>
-                          <span className="font-medium text-white">
-                            Course:
-                          </span>{" "}
-                          {req.courseTitle}
+                          <span className="font-medium text-white">Course:</span> {req.courseTitle}
                         </p>
                         <p>
-                          <span className="font-medium text-white">Type:</span>{" "}
-                          {req.type}
+                          <span className="font-medium text-white">Type:</span> {req.type}
                         </p>
                         <p>
-                          <span className="font-medium text-white">USN:</span>{" "}
-                          {req.usn}
+                          <span className="font-medium text-white">USN:</span> {req.usn}
                         </p>
                         <p>
-                          <span className="font-medium text-white">Start:</span>{" "}
-                          {req.start}
+                          <span className="font-medium text-white">Start:</span> {req.start}
                         </p>
                         <p>
-                          <span className="font-medium text-white">End:</span>{" "}
-                          {req.end}
+                          <span className="font-medium text-white">End:</span> {req.end}
                         </p>
                         <p>
-                          <span className="font-medium text-white">Signatory:</span>{" "}
-                          {req.signatory}
+                          <span className="font-medium text-white">Signatory:</span> {req.signatory}
                         </p>
                       </div>
                     )}
@@ -77,13 +70,9 @@ export default function UserRequests({
                   {/* Action Buttons */}
                   <div className="flex gap-2 sm:gap-3 items-center">
                     <button
-                      onClick={() =>
-                        setExpanded(expanded === req._id ? null : req._id)
-                      }
+                      onClick={() => setExpanded(expanded === req._id ? null : req._id)}
                       className="p-2 sm:p-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center justify-center"
-                      title={
-                        expanded === req._id ? "Hide Details" : "View Details"
-                      }
+                      title={expanded === req._id ? "Hide Details" : "View Details"}
                     >
                       <EyeIcon className="h-5 w-5" />
                     </button>
@@ -94,6 +83,14 @@ export default function UserRequests({
                       title="Copy Details"
                     >
                       <ClipboardIcon className="h-5 w-5" />
+                    </button>
+
+                    <button
+                      onClick={() => approveRequest(req._id)}   // ✅ approve
+                      className="p-2 sm:p-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center justify-center"
+                      title="Approve Request"
+                    >
+                      <CheckIcon className="h-5 w-5" />
                     </button>
 
                     <button

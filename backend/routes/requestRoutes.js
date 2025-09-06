@@ -60,5 +60,36 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+// ✅ Approve request
+router.put("/:id/approve", async (req, res) => {
+  try {
+    const request = await Request.findByIdAndUpdate(
+      req.params.id,
+      { status: "approved" },
+      { new: true }
+    );
+
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        message: "Request not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Request approved successfully",
+      request,
+    });
+  } catch (err) {
+    console.error("Error approving request:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to approve request",
+    });
+  }
+});
+
+
 
 module.exports = router;

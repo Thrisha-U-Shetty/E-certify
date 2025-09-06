@@ -64,6 +64,32 @@ router.post("/create", async (req, res) => {
   }
 });
 
+router.post("/check-duplicate", async (req, res) => {
+  try {
+    const { name, courseTitle, type, start, end } = req.body;
+
+    const duplicate = await Certificate.findOne({
+      name,
+      courseTitle,
+      type,
+      start,
+      end,
+    });
+
+    if (duplicate) {
+      return res.status(400).json({
+        success: false,
+        message: "Certificate already exists with the same details",
+      });
+    }
+
+    res.json({ success: true, message: "No duplicate found" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+
 router.post("/upload", async (req, res) => {
   try {
     const { certificateId, pdfBase64 } = req.body;
