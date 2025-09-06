@@ -46,60 +46,67 @@ export default function AdminDashboard() {
   }, []);
 
   // --- Custom toast function (with progress + close) ---
-  const showToast = (message, type = "success") => {
-    toast.custom(
-      (t) => (
-        <div
-          className={`w-full sm:w-auto max-w-sm transform transition-all duration-200
-            ${t.visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"}`}
-        >
-          <div
-            className={`relative overflow-hidden text-white px-4 py-3 rounded-lg shadow-md flex items-center justify-between
-              ${
-                type === "success"
-                  ? "bg-green-700/90"
-                  : "bg-gradient-to-r from-red-600 via-red-500 to-red-600"
-              }`}
+const showToast = (message, type = "success") => {
+  toast.custom((t) => (
+    <div
+      className={`w-full sm:w-auto max-w-sm transform transition-all duration-200
+        ${t.visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"}`}
+    >
+      <div
+        className={`${
+          type === "success"
+            ? "bg-gradient-to-r from-green-700/90 via-green-600/90 to-green-500/90"
+            : "bg-gradient-to-r from-red-600 via-red-500 to-red-600"
+        } text-white px-4 py-3 rounded-lg shadow-md flex items-center justify-between relative overflow-hidden`}
+      >
+        {/* ✅ Success Icon (only for success type) */}
+        {type === "success" && (
+          <svg
+            className="w-5 h-5 text-white mr-2 flex-shrink-0"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
           >
-            {/* Message */}
-            <span className="font-medium flex-1">{message}</span>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M5 13l4 4L19 7"
+            />
+          </svg>
+        )}
 
-            {/* Close button */}
-            <button
-              onClick={() => toast.dismiss(t.id)}
-              className="ml-3 text-white/80 hover:text-white font-bold text-lg leading-none"
-            >
-              ✕
-            </button>
+        {/* Message */}
+        <span className="font-medium flex-1">{message}</span>
 
-            {/* Progress bar */}
-            <div
-              className="absolute bottom-0 left-0 h-0.5 bg-white/80 rounded-b"
-              style={{
-                width: "100%",
-                animation: "shrink 5s linear forwards",
-              }}
-            ></div>
+        {/* Close button */}
+        <button
+          onClick={() => toast.dismiss(t.id)}
+          className="ml-2 text-white/80 hover:text-white font-bold text-base"
+        >
+          ✕
+        </button>
 
-            {/* Inline keyframes */}
-            <style>{`
-              @keyframes shrink {
-                from {
-                  transform: scaleX(1);
-                  transform-origin: left;
-                }
-                to {
-                  transform: scaleX(0);
-                  transform-origin: left;
-                }
-              }
-            `}</style>
-          </div>
-        </div>
-      ),
-      { duration: 5000 }
-    );
-  };
+        {/* Progress bar */}
+        <div
+          className="absolute bottom-0 left-0 h-0.5 bg-white/80 rounded-b"
+          style={{
+            width: "100%",
+            animation: "shrink 5s linear forwards",
+          }}
+        ></div>
+
+        <style>{`
+          @keyframes shrink {
+            from { transform: scaleX(1); transform-origin: left; }
+            to { transform: scaleX(0); transform-origin: left; }
+          }
+        `}</style>
+      </div>
+    </div>
+  ));
+};
+
 
   // --- Copy request to form ---
   const copyRequestToForm = (request) => {

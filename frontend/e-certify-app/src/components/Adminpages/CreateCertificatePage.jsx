@@ -12,56 +12,66 @@ export default function CreateCertificatePage({ formData, setFormData }) {
   const [certId, setCertId] = useState(null);
 
   // --- Custom toast functions with close button ---
-  const showToast = (message, type = "success") => {
-    toast.custom((t) => (
+const showToast = (message, type = "success") => {
+  toast.custom((t) => (
+    <div
+      className={`w-full sm:w-auto max-w-sm transform transition-all duration-200
+        ${t.visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"}`}
+    >
       <div
-        className={`w-full sm:w-auto max-w-sm transform transition-all duration-200
-          ${
-            t.visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"
-          }`}
+        className={`${
+          type === "success"
+            ? "bg-gradient-to-r from-green-700/90 via-green-600/90 to-green-500/90"
+            : "bg-gradient-to-r from-red-600 via-red-500 to-red-600"
+        } text-white px-4 py-3 rounded-lg shadow-md flex items-center justify-between relative overflow-hidden`}
       >
-        <div
-          className={`${
-            type === "success"
-              ? "bg-green-700/90"
-              : "bg-gradient-to-r from-red-600 via-red-500 to-red-600"
-          } text-white px-4 py-3 rounded-lg shadow-md flex items-center justify-between relative overflow-hidden`}
-        >
-          {/* Message only */}
-          <span className="font-medium flex-1">{message}</span>
-
-          {/* Close button */}
-          <button
-            onClick={() => toast.dismiss(t.id)}
-            className="ml-2 text-white/80 hover:text-white font-bold text-base"
+        {/* ✅ Success Icon (only for success type) */}
+        {type === "success" && (
+          <svg
+            className="w-5 h-5 text-white mr-2 flex-shrink-0"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
           >
-            ✕
-          </button>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M5 13l4 4L19 7"
+            />
+          </svg>
+        )}
 
-          {/* Progress bar (inline animation, always white) */}
-          <div
-            className="absolute bottom-0 left-0 h-0.5 bg-white/80 rounded-b"
-            style={{
-              width: "100%",
-              animation: "shrink 5s linear forwards",
-            }}
-          ></div>
-          <style>{`
-              @keyframes shrink {
-                from {
-                  transform: scaleX(1);
-                  transform-origin: left;
-                }
-                to {
-                  transform: scaleX(0);
-                  transform-origin: left;
-                }
-              }
-            `}</style>
-        </div>
+        {/* Message */}
+        <span className="font-medium flex-1">{message}</span>
+
+        {/* Close button */}
+        <button
+          onClick={() => toast.dismiss(t.id)}
+          className="ml-2 text-white/80 hover:text-white font-bold text-base"
+        >
+          ✕
+        </button>
+
+        {/* Progress bar */}
+        <div
+          className="absolute bottom-0 left-0 h-0.5 bg-white/80 rounded-b"
+          style={{
+            width: "100%",
+            animation: "shrink 5s linear forwards",
+          }}
+        ></div>
+
+        <style>{`
+          @keyframes shrink {
+            from { transform: scaleX(1); transform-origin: left; }
+            to { transform: scaleX(0); transform-origin: left; }
+          }
+        `}</style>
       </div>
-    ));
-  };
+    </div>
+  ));
+};
 
   const handleUploadAndPush = async () => {
     try {
