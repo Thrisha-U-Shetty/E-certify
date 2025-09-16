@@ -11,6 +11,7 @@ export default function CreateCertificatePage({ formData, setFormData }) {
   const certificateRef = useRef(null);
   const [certId, setCertId] = useState(null);
   const [isPushing, setIsPushing] = useState(false); // ✅ loading state
+  const backendBaseUrl = import.meta.env.VITE_BACKEND_BASE_URL;
 
   // --- Custom toast ---
   const showToast = (message, type = "success") => {
@@ -81,7 +82,7 @@ export default function CreateCertificatePage({ formData, setFormData }) {
       showToast("Uploaded PDF", "success");
 
       const response = await fetch(
-        `http://localhost:5000/api/certificates/${certId}`
+        `${backendBaseUrl}/api/certificates/${certId}`
       );
       if (!response.ok)
         return showToast("Failed to fetch certificate from DB", "error");
@@ -166,7 +167,7 @@ export default function CreateCertificatePage({ formData, setFormData }) {
     try {
       // 1️⃣ Duplicate check before creating certificate
       const duplicateCheckRes = await fetch(
-        `http://localhost:5000/api/certificates/check-duplicate`,
+        `${backendBaseUrl}/api/certificates/check-duplicate`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -191,7 +192,7 @@ export default function CreateCertificatePage({ formData, setFormData }) {
 
       // 2️⃣ Proceed to create certificate only if no duplicate
       const response = await fetch(
-        "http://localhost:5000/api/certificates/create",
+        `${backendBaseUrl}/api/certificates/create`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

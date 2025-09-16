@@ -29,12 +29,13 @@ export default function AdminDashboard() {
   // ✅ new state for approve modal
   const [showApproveConfirm, setShowApproveConfirm] = useState(false);
   const [approveId, setApproveId] = useState(null);
+  const backendBaseUrl = import.meta.env.VITE_BACKEND_BASE_URL;
 
   useEffect(() => {
     const fetchRequests = async () => {
       try {
         setLoading(true);
-        const res = await fetch("http://localhost:5000/api/requests/all");
+        const res = await fetch(`${backendBaseUrl}/api/requests/all`);
         const data = await res.json();
         if (res.ok && data.success) {
           setRequests(data.requests);
@@ -128,7 +129,7 @@ export default function AdminDashboard() {
   const approveRequest = async (id) => {
     try {
       const res = await fetch(
-        `http://localhost:5000/api/requests/${id}/approve`,
+        `${backendBaseUrl}/api/requests/${id}/approve`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -156,7 +157,7 @@ export default function AdminDashboard() {
     if (!deleteId) return;
     try {
       const res = await fetch(
-        `http://localhost:5000/api/requests/${deleteId}`,
+        `${backendBaseUrl}/api/requests/${deleteId}`,
         {
           method: "DELETE",
         }
