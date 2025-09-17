@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 // Counter schema for auto-increment
 const counterSchema = new mongoose.Schema({
@@ -16,11 +16,11 @@ const requestSchema = new mongoose.Schema({
   start: { type: String, required: true },
   end: { type: String, required: true },
   signatory: { type: String, required: true },
-  status: { type: String, default: "pending" }, // pending | approved 
+  status: { type: String, default: "pending" }, // pending | approved
 });
 
 // Auto-increment requestNumber before saving
-requestSchema.pre("save", async function(next) {
+requestSchema.pre("save", async function (next) {
   if (this.isNew) {
     const counter = await Counter.findOneAndUpdate(
       { name: "requestNumber" },
@@ -32,4 +32,6 @@ requestSchema.pre("save", async function(next) {
   next();
 });
 
-module.exports = mongoose.model("Request", requestSchema);
+const Request = mongoose.model("Request", requestSchema);
+
+export default Request;

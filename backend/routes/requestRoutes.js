@@ -1,7 +1,7 @@
-const express = require("express");
-const router = express.Router();
-const Request = require("../models/Request"); 
+import express from "express";
+import Request from "../models/Request.js";   // include .js extension in ESM
 
+const router = express.Router();
 
 // ---------------------- REQUEST ROUTES ---------------------- //
 
@@ -11,7 +11,9 @@ router.post("/create", async (req, res) => {
     const { name, usn, courseTitle, type, start, end, signatory } = req.body;
 
     if (!name || !usn || !courseTitle || !type || !start || !end || !signatory) {
-      return res.status(400).json({ success: false, message: "All fields are required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "All fields are required" });
     }
 
     const newRequest = new Request({
@@ -46,7 +48,6 @@ router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Find the request by MongoDB _id
     const request = await Request.findById(id);
     if (!request) {
       return res.status(404).json({ success: false, message: "Request not found" });
@@ -90,6 +91,4 @@ router.put("/:id/approve", async (req, res) => {
   }
 });
 
-
-
-module.exports = router;
+export default router;

@@ -1,5 +1,5 @@
 // backend/models/Certificate.js
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const CertificateSchema = new mongoose.Schema({
   certId: { type: String, required: true, unique: true },
@@ -11,7 +11,9 @@ const CertificateSchema = new mongoose.Schema({
   end: { type: Date, required: true },
   issuedDate: { type: Date, required: true },
   signatory: { type: String, required: true },
-  ipfsHash: { type: String , default:""} // optional, updated after PDF upload
+  ipfsHash: { type: String, default: "" }, // optional, updated after PDF upload
 });
 
-module.exports = mongoose.model("Certificate", CertificateSchema);
+const Certificate = mongoose.model("Certificate", CertificateSchema);
+
+export default Certificate;

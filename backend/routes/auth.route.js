@@ -28,3 +28,10 @@ router.post("/forgot-password", forgotPassword);
 router.post("/reset-password/:token", resetPassword);
 
 export default router;
+// import jwt from "jsonwebtoken";
+
+// export const generateToken = (userId) => {
+//   return jwt.sign({ userId }, process.env.JWT_SECRET, {
+//     expiresIn: "7d", // Token valid for 7 days
+//   });
+// };
