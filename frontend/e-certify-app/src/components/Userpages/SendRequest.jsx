@@ -15,6 +15,7 @@ export default function SendRequest() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [toast, setToast] = useState({ show: false, type: "", message: "" });
+  const backendBaseUrl = import.meta.env.VITE_BACKEND_BASE_URL;
 
   // ✅ Helper: show toast
   const triggerToast = (type, message) => {
@@ -89,7 +90,7 @@ export default function SendRequest() {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/api/requests/create",
+        `${backendBaseUrl}/api/requests/create`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

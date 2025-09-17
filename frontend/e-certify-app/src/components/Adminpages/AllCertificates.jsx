@@ -7,11 +7,12 @@ export default function AllCertificates() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const backendBaseUrl = import.meta.env.VITE_BACKEND_BASE_URL;
 
   useEffect(() => {
     const fetchCertificates = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/certificates/all");
+        const res = await fetch(`${backendBaseUrl}/api/certificates/all`);
         const data = await res.json();
         if (data.success) {
           setCertificates(data.certificates);
