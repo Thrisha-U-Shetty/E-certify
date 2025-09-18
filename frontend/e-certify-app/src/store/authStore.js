@@ -23,7 +23,6 @@ export const useAuthStore = create((set) => ({
         name,
       });
 
-      // Save token
       localStorage.setItem("token", response.data.token);
 
       set({
@@ -31,12 +30,14 @@ export const useAuthStore = create((set) => ({
         isAuthenticated: true,
         isLoading: false,
       });
+
+      return true; // 👈 return success
     } catch (error) {
       set({
         error: error.response?.data?.message || "Error signing up",
         isLoading: false,
       });
-      throw error;
+      return false; // 👈 return failure
     }
   },
 
@@ -48,7 +49,6 @@ export const useAuthStore = create((set) => ({
         password,
       });
 
-      // Save token
       localStorage.setItem("token", response.data.token);
 
       set({
@@ -57,12 +57,14 @@ export const useAuthStore = create((set) => ({
         error: null,
         isLoading: false,
       });
+
+      return true; // 👈 return success
     } catch (error) {
       set({
         error: error.response?.data?.message || "Error logging in",
         isLoading: false,
       });
-      throw error;
+      return false; // 👈 return failure
     }
   },
 
@@ -72,7 +74,7 @@ export const useAuthStore = create((set) => ({
       const token = localStorage.getItem("token");
       if (!token) {
         set({ isCheckingAuth: false, isAuthenticated: false });
-        return;
+        return false;
       }
 
       const response = await axios.get(`${API_URL}/check-auth`, {
@@ -86,22 +88,22 @@ export const useAuthStore = create((set) => ({
         isAuthenticated: true,
         isCheckingAuth: false,
       });
+
+      return true;
     } catch (error) {
       set({
         error: null,
         isCheckingAuth: false,
         isAuthenticated: false,
       });
+      return false;
     }
   },
 
   logout: async () => {
     set({ isLoading: true, error: null });
     try {
-      // Optionally call backend logout if it does cleanup
       await axios.post(`${API_URL}/logout`);
-
-      // Remove token
       localStorage.removeItem("token");
 
       set({
@@ -110,9 +112,11 @@ export const useAuthStore = create((set) => ({
         error: null,
         isLoading: false,
       });
+
+      return true;
     } catch (error) {
       set({ error: "Error logging out", isLoading: false });
-      throw error;
+      return false;
     }
   },
 
@@ -129,13 +133,13 @@ export const useAuthStore = create((set) => ({
         isLoading: false,
       });
 
-      return response.data;
+      return true;
     } catch (error) {
       set({
         error: error.response?.data?.message || "Error verifying email",
         isLoading: false,
       });
-      throw error;
+      return false;
     }
   },
 
@@ -146,6 +150,7 @@ export const useAuthStore = create((set) => ({
         email,
       });
       set({ message: response.data.message, isLoading: false });
+      return true;
     } catch (error) {
       set({
         isLoading: false,
@@ -153,7 +158,7 @@ export const useAuthStore = create((set) => ({
           error.response?.data?.message ||
           "Error sending reset password email",
       });
-      throw error;
+      return false;
     }
   },
 
@@ -165,12 +170,13 @@ export const useAuthStore = create((set) => ({
         { password }
       );
       set({ message: response.data.message, isLoading: false });
+      return true;
     } catch (error) {
       set({
         isLoading: false,
         error: error.response?.data?.message || "Error resetting password",
       });
-      throw error;
+      return false;
     }
   },
 }));

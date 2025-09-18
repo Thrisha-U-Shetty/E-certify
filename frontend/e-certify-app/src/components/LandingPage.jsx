@@ -5,7 +5,12 @@ export default function LandingPage() {
       {/* Navbar */}
       <nav className="flex justify-between items-center px-8 py-4 shadow-lg bg-gray-900/80 backdrop-blur-lg sticky top-0 z-50">
         <h1 className="text-2xl font-extrabold text-white">E-Certify</h1>
-        <div className="flex gap-6">
+         {/* <img
+          src="/cube.png"
+          alt="E-Certify Logo"
+          className="w-24 h-24 drop-shadow-[0_0_15px_rgba(16,185,129,0.8)] hover:scale-110 transition-transform duration-300"
+        /> */}
+        {/* <div className="flex gap-6">
           <a href="/login" className="text-gray-300 hover:text-white transition">
             Login
           </a>
@@ -15,7 +20,7 @@ export default function LandingPage() {
           <a href="/logout" className="text-gray-300 hover:text-white transition">
             Logout
           </a>
-        </div>
+        </div> */}
       </nav>
 
       {/* Hero Section */}
@@ -32,12 +37,12 @@ export default function LandingPage() {
             <span className="font-semibold text-white-400"> trust</span>.
           </p>
           <div className="mt-8 flex gap-4 justify-center md:justify-start">
-            <a
+            {/* <a
               href="/register"
               className="px-6 py-3 rounded-2xl bg-green-600 text-white font-medium shadow-lg hover:bg-green-700 transition"
             >
               Get Started
-            </a>
+            </a> */}
             <a
               href="/login"
               className="px-6 py-3 rounded-2xl bg-gray-800 border border-green-500 text-green-400 font-medium shadow-lg hover:bg-gray-700 transition"
