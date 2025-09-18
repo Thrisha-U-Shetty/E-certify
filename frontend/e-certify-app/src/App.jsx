@@ -22,32 +22,6 @@ import LandingPage from "./components/LandingPage";
 import AdminDashboard from "./components/Adminpages/Admindashboard";
 import CreateCertificatePage from "./components/Adminpages/CreateCertificatePage";
 
-// Protect routes that require authentication
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, user } = useAuthStore();
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (!user.isVerified) {
-    return <Navigate to="/verify-email" replace />;
-  }
-
-  return children;
-};
-
-// Redirect authenticated users to the home page
-const RedirectAuthenticatedUser = ({ children }) => {
-  const { isAuthenticated, user } = useAuthStore();
-
-  if (isAuthenticated && user.isVerified) {
-    return <Navigate to="/" replace />;
-  }
-
-  return children;
-};
-
 function App() {
   const { isCheckingAuth, checkAuth } = useAuthStore();
   const username = "User";
@@ -78,90 +52,32 @@ function App() {
         <Route path="/verify/:certId" element={<Verify />} />
 
         {/* Auth Pages */}
-        <Route
-          path="/signup"
-          element={
-            <RedirectAuthenticatedUser>
-              <SignUpPage />
-            </RedirectAuthenticatedUser>
-          }
-        />
-        <Route
-          path="/login"
-          element={
-            <RedirectAuthenticatedUser>
-              <LoginPage />
-            </RedirectAuthenticatedUser>
-          }
-        />
+        <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/verify-email" element={<EmailVerificationPage />} />
-        <Route
-          path="/forgot-password"
-          element={
-            <RedirectAuthenticatedUser>
-              <ForgotPasswordPage />
-            </RedirectAuthenticatedUser>
-          }
-        />
-        <Route
-          path="/reset-password/:token"
-          element={
-            <RedirectAuthenticatedUser>
-              <ResetPasswordPage />
-            </RedirectAuthenticatedUser>
-          }
-        />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
-        {/* Protected Dashboard Pages */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          }
-        />
+        {/* Dashboard Pages */}
+        <Route path="/dashboard" element={<DashboardPage />} />
 
         {/* Admin Pages */}
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute>
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/create"
-          element={
-            <ProtectedRoute>
-              <CreateCertificatePage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin/create" element={<CreateCertificatePage />} />
 
         {/* User Dashboard (with nested routes) */}
         <Route
           path="/user"
-          element={
-            <ProtectedRoute>
-              <UserDashboard username={username} onLogout={handleLogout} />
-            </ProtectedRoute>
-          }
+          element={<UserDashboard username={username} onLogout={handleLogout} />}
         >
-          {/* Default child */}
           <Route index element={<Navigate to="userview" replace />} />
           <Route
             path="userview"
-            element={
-              <ViewCertificates username={username} onLogout={handleLogout} />
-            }
+            element={<ViewCertificates username={username} onLogout={handleLogout} />}
           />
           <Route
             path="sendrequest"
-            element={
-              <SendRequest username={username} onLogout={handleLogout} />
-            }
+            element={<SendRequest username={username} onLogout={handleLogout} />}
           />
         </Route>
 
