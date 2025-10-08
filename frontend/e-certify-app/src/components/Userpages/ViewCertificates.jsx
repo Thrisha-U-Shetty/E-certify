@@ -6,34 +6,51 @@ export default function ViewCertificates({ username }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-   const backendBaseUrl = import.meta.env.VITE_BACKEND_BASE_URL;
+  const backendBaseUrl = import.meta.env.VITE_BACKEND_BASE_URL;
 
   // Fetch certificates from backend
-  useEffect(() => {
-    const fetchCertificates = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(
-          `${backendBaseUrl}/api/requests/user`
-        );
+  // Fetch certificates from backend
+useEffect(() => {
+  const fetchCertificates = async () => {
+    try {
+      setLoading(true);
 
-        const data = await response.json();
-
-        if (data.success) {
-          setCertificates(data.certificates);
-          setError("");
-        } else {
-          setError(data.message || "No certificates found");
-        }
-      } catch (err) {
-        setError("Error fetching certificates");
-      } finally {
+      // 🔹 Get the token stored after login
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setError("User not logged in");
         setLoading(false);
+        return;
       }
-    };
 
-    if (username) fetchCertificates();
-  }, [username]);
+      // 🔹 Send token in Authorization header
+      const response = await fetch(`${backendBaseUrl}/api/requests/user`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // ✅ This sends token to backend
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setCertificates(data.certificates);
+        setError("");
+      } else {
+        setError(data.message || "No certificates found");
+      }
+    } catch (err) {
+      console.error("Error fetching certificates:", err);
+      setError("Error fetching certificates");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchCertificates();
+}, []);
+
 
   const handleView = (cert) => {
     window.open(cert.fileUrl, "_blank");
@@ -84,7 +101,7 @@ export default function ViewCertificates({ username }) {
                   Certificate ID: {cert.certId}
                 </p>
                 <p className="text-md text-gray-300 mt-1">
-                  Event Title: {cert.eventTitle}
+                  Title: {cert.eventTitle}
                 </p>
               </div>
 

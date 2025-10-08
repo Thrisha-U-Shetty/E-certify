@@ -29,7 +29,6 @@ function App() {
 
   
   const handleLogout = () => {
-    alert("User logged out!");
     // Optional: clear any saved auth data
     localStorage.removeItem("token");
     sessionStorage.clear();

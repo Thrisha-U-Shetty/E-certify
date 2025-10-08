@@ -1,5 +1,6 @@
 import express from "express";
 import Request from "../models/Request.js";   
+import Certificate from "../models/Certificate.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 // include .js extension in ESM
 
@@ -93,12 +94,10 @@ router.put("/:id/approve", async (req, res) => {
   }
 });
 
-// GET /api/certificates/user
 router.get("/user", verifyToken, async (req, res) => {
   try {
-    // 1️⃣ Extract name from the token (set in verifyToken)
-    const userName = req.userName; // make sure verifyToken sets this
-
+    // 🔹 Extract name from token (set by verifyToken middleware)
+    const userName = req.userName;
     if (!userName) {
       return res.status(400).json({
         success: false,
@@ -106,7 +105,7 @@ router.get("/user", verifyToken, async (req, res) => {
       });
     }
 
-    // 2️⃣ Fetch certificates from DB using the name
+    // 🔹 Fetch certificates from DB for this user
     const certificates = await Certificate.find({
       name: { $regex: new RegExp(`^${userName}$`, "i") }, // case-insensitive
       ipfsHash: { $exists: true, $nin: [null, ""] },
@@ -119,7 +118,7 @@ router.get("/user", verifyToken, async (req, res) => {
       });
     }
 
-    // 3️⃣ Format and send response
+    // 🔹 Format and send response
     const result = certificates.map((cert) => ({
       certId: cert.certId,
       name: cert.name,
@@ -133,7 +132,6 @@ router.get("/user", verifyToken, async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
-
 
 
 export default router;

@@ -4,24 +4,41 @@ import { useNavigate } from "react-router-dom";
 export default function Login() {
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
 
-    // TODO: Replace with real backend call
     const email = e.target.email.value;
     const password = e.target.password.value;
 
-    if (email && password) {
-      // Save login state
-      localStorage.setItem("isLoggedIn", true);
-      localStorage.setItem("userEmail", email);
+    try {
+      // 🔹 Send login request to backend
+      const response = await fetch("http://localhost:5000/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-      // Redirect to Dashboard
-      navigate("/dashboard");
-    } else {
-      alert("Invalid login");
+      const data = await response.json();
+
+      if (response.ok) {
+        // 🔹 Store token & user info
+        localStorage.setItem("isLoggedIn", "true");
+        localStorage.setItem("userEmail", data.user.email);
+        localStorage.setItem("token", data.token);
+
+        // 🔹 Redirect to dashboard
+        navigate("/dashboard");
+      } else {
+        alert(data.message || "Invalid email or password");
+      }
+    } catch (error) {
+      console.error("Login failed:", error);
+      alert("Something went wrong. Please try again.");
     }
   };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 via-white to-indigo-200">
