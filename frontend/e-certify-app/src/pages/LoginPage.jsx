@@ -67,15 +67,6 @@ const LoginPage = () => {
               >
                 Forgot password?
               </Link>
-
-              {/* Logout button */}
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="flex items-center gap-1 text-sm text-red-400 hover:underline"
-              >
-                <LogOut className="w-4 h-4" /> Logout
-              </button>
             </div>
 
             {error && (

@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import LoadingSpinner from "./components/LoadingSpinner";
 import { useAuthStore } from "./store/authStore";
@@ -24,9 +24,17 @@ import CreateCertificatePage from "./components/Adminpages/CreateCertificatePage
 function App() {
   const { isCheckingAuth, checkAuth } = useAuthStore();
   const username = "User";
+  const navigate = useNavigate();
+  
 
+  
   const handleLogout = () => {
     alert("User logged out!");
+    // Optional: clear any saved auth data
+    localStorage.removeItem("token");
+    sessionStorage.clear();
+    // Redirect to login
+    navigate("/login");
   };
 
   useEffect(() => {
@@ -57,7 +65,7 @@ function App() {
         <Route path="/dashboard" element={<DashboardPage />} />
 
         {/* Admin Pages */}
-        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin" element={<AdminDashboard username="admin"  onLogout={handleLogout} /> }/>
         <Route path="/admin/create" element={<CreateCertificatePage />} />
 
         {/* User Dashboard (with nested routes) */}

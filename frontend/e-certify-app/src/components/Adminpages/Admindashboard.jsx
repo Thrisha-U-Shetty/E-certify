@@ -4,8 +4,9 @@ import { toast } from "react-hot-toast";
 import CreateCertificatePage from "./CreateCertificatePage";
 import AllCertificates from "./AllCertificates";
 import UserRequests from "./UserRequests";
+import { NavLink, Outlet } from "react-router-dom";
 
-export default function AdminDashboard() {
+export default function AdminDashboard({ onLogout }) {
   const [activePage, setActivePage] = useState("requests");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -227,6 +228,12 @@ export default function AdminDashboard() {
             }`}
           >
             All Certificates
+          </button>
+           <button
+            onClick={onLogout}
+            className="w-full px-4 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 transition"
+          >
+            Logout
           </button>
         </nav>
       </div>

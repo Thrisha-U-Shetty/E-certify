@@ -95,37 +95,39 @@ export const verifyEmail = async (req, res) => {
 
 // ----------------- LOGIN -----------------
 export const login = async (req, res) => {
-	const { email, password } = req.body;
-	try {
-		const user = await User.findOne({ email });
-		if (!user) {
-			return res.status(400).json({ success: false, message: "Invalid credentials" });
-		}
+  const { email, password } = req.body;
 
-		const isPasswordValid = await bcryptjs.compare(password, user.password);
-		if (!isPasswordValid) {
-			return res.status(400).json({ success: false, message: "Invalid credentials" });
-		}
+  try {
+    // 1️⃣ Find user
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ success: false, message: "Invalid credentials" });
+    }
 
-		// JWT token
-		const token = generateToken(user._id);
+    // 2️⃣ Check password
+    const isPasswordValid = await bcryptjs.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(400).json({ success: false, message: "Invalid credentials" });
+    }
 
-		user.lastLogin = new Date();
-		await user.save();
+    // 3️⃣ Generate JWT token
+    const token = generateToken(user); // ✅ full user object
 
-		res.status(200).json({
-			success: true,
-			message: "Logged in successfully",
-			user: {
-				...user._doc,
-				password: undefined,
-			},
-			token, // frontend saves this
-		});
-	} catch (error) {
-		console.error("Error in login:", error);
-		res.status(400).json({ success: false, message: error.message });
-	}
+    // 4️⃣ Update last login
+    user.lastLogin = new Date();
+    await user.save();
+
+    // 5️⃣ Return response
+    res.status(200).json({
+      success: true,
+      message: "Logged in successfully",
+      user: { ...user._doc, password: undefined },
+      token,
+    });
+  } catch (error) {
+    console.error("Error in login:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
 };
 
 // ----------------- LOGOUT -----------------
@@ -194,19 +196,21 @@ export const resetPassword = async (req, res) => {
 
 // ----------------- CHECK AUTH -----------------
 export const checkAuth = async (req, res) => {
-	try {
-		const user = await User.findById(req.userId).select("-password");
+  try {
+    // Use req.user.id instead of req.userId
+    const user = await User.findById(req.userId).select("-password");
 
-		if (!user) {
-			return res.status(404).json({ success: false, message: "User not found" });
-		}
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
 
-		res.status(200).json({
-			success: true,
-			user,
-		});
-	} catch (error) {
-		console.error("Error in checkAuth:", error);
-		res.status(500).json({ success: false, message: "Internal server error" });
-	}
+    res.status(200).json({
+      success: true,
+      user,
+    });
+  } catch (error) {
+    console.error("Error in checkAuth:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
 };
+
