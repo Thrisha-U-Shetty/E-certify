@@ -55,16 +55,14 @@ export default function AdminDashboard({ onLogout }) {
     toast.custom((t) => (
       <div
         className={`w-full sm:w-auto max-w-sm transform transition-all duration-200
-        ${
-          t.visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"
-        }`}
+        ${t.visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"
+          }`}
       >
         <div
-          className={`${
-            type === "success"
+          className={`${type === "success"
               ? "bg-gradient-to-r from-green-700/90 via-green-600/90 to-green-500/90"
               : "bg-gradient-to-r from-red-600 via-red-500 to-red-600"
-          } text-white px-4 py-3 rounded-lg shadow-md flex items-center justify-between relative overflow-hidden`}
+            } text-white px-4 py-3 rounded-lg shadow-md flex items-center justify-between relative overflow-hidden`}
         >
           {type === "success" && (
             <svg
@@ -185,9 +183,8 @@ export default function AdminDashboard({ onLogout }) {
     <div className="min-h-screen flex flex-col md:flex-row bg-gradient-to-br from-black via-gray-900 to-green-900 relative">
       {/* Sidebar */}
       <div
-        className={`fixed md:static inset-y-0 left-0 z-20 w-64 bg-gray-900/90 backdrop-blur-lg shadow-lg md:translate-x-0 transform transition-transform duration-200 ease-in-out ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } md:flex md:flex-col`}
+        className={`fixed md:static inset-y-0 left-0 z-20 w-64 bg-gray-900/90 backdrop-blur-lg shadow-lg md:translate-x-0 transform transition-transform duration-200 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          } md:flex md:flex-col`}
       >
         <div className="flex items-center justify-between md:justify-center h-16 border-b border-gray-700 px-4">
           <h1 className="text-xl font-bold text-green-400">Admin Dashboard</h1>
@@ -198,44 +195,48 @@ export default function AdminDashboard({ onLogout }) {
             <X size={24} />
           </button>
         </div>
-        <nav className="flex-1 px-4 py-6 space-y-2">
-          <button
-            onClick={() => setActivePage("requests")}
-            className={`w-full text-left px-4 py-2 rounded-lg font-medium transition ${
-              activePage === "requests"
-                ? "bg-green-600 text-white"
-                : "text-gray-300 hover:bg-gray-800"
-            }`}
-          >
-            User Requests
-          </button>
-          <button
-            onClick={() => setActivePage("create")}
-            className={`w-full text-left px-4 py-2 rounded-lg font-medium transition ${
-              activePage === "create"
-                ? "bg-green-600 text-white"
-                : "text-gray-300 hover:bg-gray-800"
-            }`}
-          >
-            Create Certificate
-          </button>
-          <button
-            onClick={() => setActivePage("all")}
-            className={`w-full text-left px-4 py-2 rounded-lg font-medium transition ${
-              activePage === "all"
-                ? "bg-green-600 text-white"
-                : "text-gray-300 hover:bg-gray-800"
-            }`}
-          >
-            All Certificates
-          </button>
-           <button
-            onClick={onLogout}
-            className="w-full px-4 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 transition"
-          >
-            Logout
-          </button>
-        </nav>
+        <div className="flex-1 flex flex-col">
+          {/* Navigation */}
+          <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+            <button
+              onClick={() => setActivePage("requests")}
+              className={`w-full text-left px-4 py-2 rounded-lg font-medium transition ${activePage === "requests"
+                  ? "bg-green-600 text-white"
+                  : "text-gray-300 hover:bg-gray-800"
+                }`}
+            >
+              User Requests
+            </button>
+            <button
+              onClick={() => setActivePage("create")}
+              className={`w-full text-left px-4 py-2 rounded-lg font-medium transition ${activePage === "create"
+                  ? "bg-green-600 text-white"
+                  : "text-gray-300 hover:bg-gray-800"
+                }`}
+            >
+              Create Certificate
+            </button>
+            <button
+              onClick={() => setActivePage("all")}
+              className={`w-full text-left px-4 py-2 rounded-lg font-medium transition ${activePage === "all"
+                  ? "bg-green-600 text-white"
+                  : "text-gray-300 hover:bg-gray-800"
+                }`}
+            >
+              All Certificates
+            </button>
+          </nav>
+
+          {/* Logout at bottom */}
+          <div className="p-4 border-t border-green-500/40">
+            <button
+              onClick={onLogout}
+              className="w-full px-4 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 transition"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Toggle button for mobile */}
