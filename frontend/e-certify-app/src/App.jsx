@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import LoadingSpinner from "./components/LoadingSpinner";
@@ -25,10 +25,16 @@ function App() {
   const { isCheckingAuth, checkAuth } = useAuthStore();
   const username = "User";
   const navigate = useNavigate();
-  
 
-  
+  // ✅ State to show logout confirmation
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
   const handleLogout = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = () => {
+    setShowLogoutConfirm(false);
     localStorage.clear();
     sessionStorage.clear();
     navigate("/login");
@@ -41,11 +47,7 @@ function App() {
   if (isCheckingAuth) return <LoadingSpinner />;
 
   return (
-    <div
-      className="w-screen h-screen bg-gradient-to-br
-  from-gray-900 via-green-900 to-emerald-900 relative overflow-hidden"
-    >
-
+    <div className="w-screen h-screen bg-gradient-to-br from-gray-900 via-green-900 to-emerald-900 relative overflow-hidden">
       <Routes>
         {/* Public Pages */}
         <Route path="/" element={<LandingPage />} />
@@ -62,10 +64,13 @@ function App() {
         <Route path="/dashboard" element={<DashboardPage />} />
 
         {/* Admin Pages */}
-        <Route path="/admin" element={<AdminDashboard username="admin"  onLogout={handleLogout} /> }/>
+        <Route
+          path="/admin"
+          element={<AdminDashboard username="admin" onLogout={handleLogout} />}
+        />
         <Route path="/admin/create" element={<CreateCertificatePage />} />
 
-        {/* User Dashboard (with nested routes) */}
+        {/* User Dashboard (nested routes) */}
         <Route
           path="/user"
           element={<UserDashboard username={username} onLogout={handleLogout} />}
@@ -84,6 +89,34 @@ function App() {
         {/* Catch all routes */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+
+      {/* --- Logout Confirmation Modal --- */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gray-900 p-6 rounded-lg shadow-lg max-w-sm w-full">
+            <h2 className="text-lg font-semibold text-white mb-4">
+              Confirm Logout
+            </h2>
+            <p className="text-gray-300 mb-6">
+              Are you sure you want to logout?
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Toaster position="top-right" gutter={8} reverseOrder={false} />
     </div>
