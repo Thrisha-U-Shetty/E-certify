@@ -29,10 +29,8 @@ function App() {
 
   
   const handleLogout = () => {
-    // Optional: clear any saved auth data
-    localStorage.removeItem("token");
+    localStorage.clear();
     sessionStorage.clear();
-    // Redirect to login
     navigate("/login");
   };
 
