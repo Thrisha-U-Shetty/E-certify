@@ -1,4 +1,3 @@
-// middleware/verifyToken.js
 import jwt from "jsonwebtoken";
 
 export const verifyToken = (req, res, next) => {
@@ -26,10 +25,12 @@ export const verifyToken = (req, res, next) => {
     // ✅ 4️⃣ Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // ✅ 5️⃣ Attach decoded data to request
-    req.userId = decoded.userId;   // Consistent with generateToken.js
+    // ✅ 5️⃣ Attach decoded data to request (matches generateToken payload)
+    req.userId = decoded.userId;
     req.userEmail = decoded.email;
     req.userName = decoded.name;
+    req.userRole = decoded.role;
+    req.isLoggedIn = decoded.isLoggedIn;
 
     // ✅ 6️⃣ Proceed to next middleware
     next();

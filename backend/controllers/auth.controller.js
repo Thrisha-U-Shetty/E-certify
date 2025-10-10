@@ -98,35 +98,55 @@ export const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // 1️⃣ Find user
+    // 1️⃣ Find user by email
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ success: false, message: "Invalid credentials" });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid credentials",
+      });
     }
 
-    // 2️⃣ Check password
+    // 2️⃣ Compare password with hashed password
     const isPasswordValid = await bcryptjs.compare(password, user.password);
     if (!isPasswordValid) {
-      return res.status(400).json({ success: false, message: "Invalid credentials" });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid credentials",
+      });
     }
 
-    // 3️⃣ Generate JWT token
-    const token = generateToken(user); // ✅ full user object
+    // 3️⃣ Generate JWT token (includes role, email, name, etc.)
+    const token = generateToken(user);
 
-    // 4️⃣ Update last login
+    // 4️⃣ Update last login timestamp
     user.lastLogin = new Date();
     await user.save();
 
-    // 5️⃣ Return response
+    // 5️⃣ Construct safe user object for response
+    const safeUser = {
+      _id: user._id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      isVerified: user.isVerified,
+      lastLogin: user.lastLogin,
+      isLoggedIn: true, // ✅ match frontend expectation
+    };
+
+    // 6️⃣ Return response
     res.status(200).json({
       success: true,
       message: "Logged in successfully",
-      user: { ...user._doc, password: undefined },
+      user: safeUser,
       token,
     });
   } catch (error) {
-    console.error("Error in login:", error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    console.error("Error in login:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 };
 

@@ -1,33 +1,54 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Mail, Lock, Loader, LogOut } from "lucide-react";
+import { Mail, Lock, Loader } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Input from "../components/Input";
-import { useAuthStore } from "../store/authStore";
 
 const LoginPage = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  const { login, logout, isLoading, error } = useAuthStore();
   const navigate = useNavigate();
 
-  // const handleLogin = async (e) => {
-  //   e.preventDefault();
-  //   await login(email, password);
-  // };
+  // 🔹 Local state
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // 🔹 Handle login
   const handleLogin = async (e) => {
-  e.preventDefault();
-  const success = await login(email, password);
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
 
-  if (success) {
-    navigate("/user"); // 👈 redirect after successful login
-  }
-};
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-  const handleLogout = () => {
-    logout();
-    navigate("/signup");
+      const data = await response.json();
+
+      if (response.ok) {
+        // 🔹 Save token & user info
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("isLoggedIn", data.user.isLoggedIn);
+        localStorage.setItem("userEmail", data.user.email);
+        localStorage.setItem("userName", data.user.name);
+        localStorage.setItem("userRole", data.user.role);
+         if (data.user.role === "admin") {
+          navigate("/admin");
+        } else {
+          navigate("/user");
+        }
+      } else {
+        setError(data.message || "Invalid email or password");
+      }
+    } catch (error) {
+      console.error("Login failed:", error);
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -50,6 +71,7 @@ const LoginPage = () => {
               placeholder="Email Address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
             />
 
             <Input
@@ -58,6 +80,7 @@ const LoginPage = () => {
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              required
             />
 
             <div className="flex items-center mb-6 justify-between">
@@ -70,7 +93,9 @@ const LoginPage = () => {
             </div>
 
             {error && (
-              <p className="text-red-500 font-semibold mb-2">{error}</p>
+              <p className="text-red-500 font-semibold mb-4 text-center">
+                {error}
+              </p>
             )}
 
             <motion.button
@@ -88,6 +113,7 @@ const LoginPage = () => {
             </motion.button>
           </form>
         </div>
+
         <div className="px-8 py-4 bg-gray-900 bg-opacity-50 flex justify-center">
           <p className="text-sm text-gray-400">
             Don't have an account?{" "}
