@@ -22,11 +22,11 @@ import AdminDashboard from "./components/Adminpages/Admindashboard";
 import CreateCertificatePage from "./components/Adminpages/CreateCertificatePage";
 
 function App() {
-  const { isCheckingAuth, checkAuth } = useAuthStore();
-  const username = "User";
+  const { isCheckingAuth, checkAuth, user } = useAuthStore(); // user object includes role
+  const username = user?.name || "User";
   const navigate = useNavigate();
 
-  // ✅ State to show logout confirmation
+  // Logout confirmation
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const handleLogout = () => {
@@ -46,6 +46,19 @@ function App() {
 
   if (isCheckingAuth) return <LoadingSpinner />;
 
+  // ✅ Protected Route for authenticated users
+  const ProtectedRoute = ({ children }) => {
+    if (!user) return <Navigate to="/login" replace />;
+    return children;
+  };
+
+  // ✅ Admin Route
+  const AdminRoute = ({ children }) => {
+    if (!user) return <Navigate to="/login" replace />;
+    if (user.role !== "admin") return <Navigate to="/dashboard" replace />;
+    return children;
+  };
+
   return (
     <div className="w-screen h-screen bg-gradient-to-br from-gray-900 via-green-900 to-emerald-900 relative overflow-hidden">
       <Routes>
@@ -60,46 +73,58 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
-        {/* Dashboard Pages */}
-        <Route path="/dashboard" element={<DashboardPage />} />
+        {/* Dashboard Pages (protected) */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
 
-        {/* Admin Pages */}
+        {/* Admin Pages (admin only) */}
         <Route
           path="/admin"
-          element={<AdminDashboard username="admin" onLogout={handleLogout} />}
+          element={
+            <AdminRoute>
+              <AdminDashboard username={username} onLogout={handleLogout} />
+            </AdminRoute>
+          }
         />
-        <Route path="/admin/create" element={<CreateCertificatePage />} />
+        <Route
+          path="/admin/create"
+          element={
+            <AdminRoute>
+              <CreateCertificatePage />
+            </AdminRoute>
+          }
+        />
 
-        {/* User Dashboard (nested routes) */}
+        {/* User Dashboard (nested protected routes) */}
         <Route
           path="/user"
-          element={<UserDashboard username={username} onLogout={handleLogout} />}
+          element={
+            <ProtectedRoute>
+              <UserDashboard username={username} onLogout={handleLogout} />
+            </ProtectedRoute>
+          }
         >
           <Route index element={<Navigate to="userview" replace />} />
-          <Route
-            path="userview"
-            element={<ViewCertificates username={username} onLogout={handleLogout} />}
-          />
-          <Route
-            path="sendrequest"
-            element={<SendRequest username={username} onLogout={handleLogout} />}
-          />
+          <Route path="userview" element={<ViewCertificates username={username} onLogout={handleLogout} />} />
+          <Route path="sendrequest" element={<SendRequest username={username} onLogout={handleLogout} />} />
         </Route>
 
-        {/* Catch all routes */}
+        {/* Catch all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      {/* --- Logout Confirmation Modal --- */}
+      {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-gray-900 p-6 rounded-lg shadow-lg max-w-sm w-full">
-            <h2 className="text-lg font-semibold text-white mb-4">
-              Confirm Logout
-            </h2>
-            <p className="text-gray-300 mb-6">
-              Are you sure you want to logout?
-            </p>
+            <h2 className="text-lg font-semibold text-white mb-4">Confirm Logout</h2>
+            <p className="text-gray-300 mb-6">Are you sure you want to logout?</p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowLogoutConfirm(false)}
