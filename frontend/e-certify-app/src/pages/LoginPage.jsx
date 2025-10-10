@@ -15,41 +15,45 @@ const LoginPage = () => {
 
   // 🔹 Handle login
   const handleLogin = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError("");
+  e.preventDefault();
+  setIsLoading(true);
+  setError("");
 
-    try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+  try {
+    const response = await fetch("http://localhost:5000/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
 
-      const data = await response.json();
+    const data = await response.json();
 
-      if (response.ok) {
-        // 🔹 Save token & user info
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("isLoggedIn", data.user.isLoggedIn);
-        localStorage.setItem("userEmail", data.user.email);
-        localStorage.setItem("userName", data.user.name);
-        localStorage.setItem("userRole", data.user.role);
-         if (data.user.role === "admin") {
+    if (response.ok) {
+      // Save token & user info
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("isLoggedIn", data.user.isLoggedIn);
+      localStorage.setItem("userEmail", data.user.email);
+      localStorage.setItem("userName", data.user.name);
+      localStorage.setItem("userRole", data.user.role);
+
+      // 🔹 Navigate after token/user is saved
+      setTimeout(() => {
+        if (data.user.role === "admin") {
           navigate("/admin");
         } else {
           navigate("/user");
         }
-      } else {
-        setError(data.message || "Invalid email or password");
-      }
-    } catch (error) {
-      console.error("Login failed:", error);
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setIsLoading(false);
+      }, 50); // slight delay to ensure state/storage consistency
+    } else {
+      setError(data.message || "Invalid email or password");
     }
-  };
+  } catch (error) {
+    console.error("Login failed:", error);
+    setError("Something went wrong. Please try again.");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">

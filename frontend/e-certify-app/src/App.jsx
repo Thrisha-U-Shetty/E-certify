@@ -8,7 +8,6 @@ import { useAuthStore } from "./store/authStore";
 import SignUpPage from "./pages/SignUpPage";
 import LoginPage from "./pages/LoginPage";
 import EmailVerificationPage from "./pages/EmailVerificationPage";
-import DashboardPage from "./pages/DashboardPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 
@@ -26,12 +25,9 @@ function App() {
   const username = user?.name || "User";
   const navigate = useNavigate();
 
-  // Logout confirmation
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  const handleLogout = () => {
-    setShowLogoutConfirm(true);
-  };
+  const handleLogout = () => setShowLogoutConfirm(true);
 
   const confirmLogout = () => {
     setShowLogoutConfirm(false);
@@ -46,44 +42,46 @@ function App() {
 
   if (isCheckingAuth) return <LoadingSpinner />;
 
-  // ✅ Protected Route for authenticated users
   const ProtectedRoute = ({ children }) => {
-    if (!user) return <Navigate to="/login" replace />;
-    return children;
+  const token = localStorage.getItem("token");
+  const user = {
+    role: localStorage.getItem("userRole"),
+    name: localStorage.getItem("userName"),
   };
+  if (!token || !user.role) return <Navigate to="/login" replace />;
+  return children;
+};
 
-  // ✅ Admin Route
-  const AdminRoute = ({ children }) => {
-    if (!user) return <Navigate to="/login" replace />;
-    if (user.role !== "admin") return <Navigate to="/dashboard" replace />;
-    return children;
-  };
+const AdminRoute = ({ children }) => {
+  const token = localStorage.getItem("token");
+  const userRole = localStorage.getItem("userRole");
+  if (!token || !userRole) return <Navigate to="/login" replace />;
+  if (userRole !== "admin") return <Navigate to="/user" replace />;
+  return children;
+};
+
+const UserRoute = ({ children }) => {
+  const token = localStorage.getItem("token");
+  const userRole = localStorage.getItem("userRole");
+  if (!token || !userRole) return <Navigate to="/login" replace />;
+  if (userRole !== "user") return <Navigate to="/admin" replace />;
+  return children;
+};
+
 
   return (
     <div className="w-screen h-screen bg-gradient-to-br from-gray-900 via-green-900 to-emerald-900 relative overflow-hidden">
       <Routes>
-        {/* Public Pages */}
+        {/* Public Pages (no role restriction) */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/verify/:certId" element={<Verify />} />
-
-        {/* Auth Pages */}
-        <Route path="/signup" element={<SignUpPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignUpPage />} />
         <Route path="/verify-email" element={<EmailVerificationPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
-        {/* Dashboard Pages (protected) */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Admin Pages (admin only) */}
+        {/* Admin Pages */}
         <Route
           path="/admin"
           element={
@@ -101,18 +99,28 @@ function App() {
           }
         />
 
-        {/* User Dashboard (nested protected routes) */}
+        {/* User Pages */}
         <Route
           path="/user"
           element={
-            <ProtectedRoute>
+            <UserRoute>
               <UserDashboard username={username} onLogout={handleLogout} />
-            </ProtectedRoute>
+            </UserRoute>
           }
         >
           <Route index element={<Navigate to="userview" replace />} />
-          <Route path="userview" element={<ViewCertificates username={username} onLogout={handleLogout} />} />
-          <Route path="sendrequest" element={<SendRequest username={username} onLogout={handleLogout} />} />
+          <Route
+            path="userview"
+            element={
+              <ViewCertificates username={username} onLogout={handleLogout} />
+            }
+          />
+          <Route
+            path="sendrequest"
+            element={
+              <SendRequest username={username} onLogout={handleLogout} />
+            }
+          />
         </Route>
 
         {/* Catch all */}
@@ -123,8 +131,12 @@ function App() {
       {showLogoutConfirm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-gray-900 p-6 rounded-lg shadow-lg max-w-sm w-full">
-            <h2 className="text-lg font-semibold text-white mb-4">Confirm Logout</h2>
-            <p className="text-gray-300 mb-6">Are you sure you want to logout?</p>
+            <h2 className="text-lg font-semibold text-white mb-4">
+              Confirm Logout
+            </h2>
+            <p className="text-gray-300 mb-6">
+              Are you sure you want to logout?
+            </p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowLogoutConfirm(false)}
