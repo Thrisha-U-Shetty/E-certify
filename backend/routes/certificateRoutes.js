@@ -2,6 +2,14 @@ import express from "express";
 import Certificate from "../models/Certificate.js";
 import axios from "axios";
 import FormData from "form-data";
+import fetch from "node-fetch";
+import crypto from "crypto";
+import { User } from "../models/user.model.js";
+import { sendCertificateEmail } from "../mailer/emails.js";
+import fs from "fs";
+import path from "path";
+import os from "os";
+import { exec } from "child_process";
 
 const router = express.Router();
 
@@ -196,11 +204,75 @@ router.get("/verify/:certId", async (req, res) => {
 // Get certificate by ID
 router.get("/:certId", async (req, res) => {
   try {
-    const cert = await Certificate.findOne({ certId: req.params.certId });
+    const { certId } = req.params;
+    const cert = await Certificate.findOne({ certId });
     if (!cert)
       return res.status(404).json({ success: false, message: "Not found" });
+
+    const user = await User.findOne({ name: cert.name });
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+
+    if (user.encryptedPdfPassword) {
+      const [ivHex, cipherHex] = user.encryptedPdfPassword.split(":");
+      const iv = Buffer.from(ivHex, "hex");
+      const key = Buffer.from(process.env.PDF_MASTER_KEY_HEX, "hex");
+      const decipher = crypto.createDecipheriv("aes-256-cbc", key, iv);
+      let decryptedPassword = decipher.update(cipherHex, "hex", "utf8");
+      decryptedPassword += decipher.final("utf8");
+
+      // Fetch PDF from IPFS
+      const ipfsGateway = "https://gateway.pinata.cloud/ipfs/";
+      const ipfsUrl = `${ipfsGateway}${cert.ipfsHash}`;
+      const response = await fetch(ipfsUrl);
+      if (!response.ok) throw new Error("Failed to fetch PDF from IPFS");
+      const buffer = Buffer.from(await response.arrayBuffer());
+
+      const tempInput = path.join(os.tmpdir(), `${certId}_plain.pdf`);
+      const tempOutput = path.join(os.tmpdir(), `${certId}_encrypted.pdf`);
+      fs.writeFileSync(tempInput, buffer);
+
+      // Encrypt PDF using pdftk CLI (user password only)
+      await new Promise((resolve, reject) => {
+        exec(
+          `pdftk "${tempInput}" output "${tempOutput}" user_pw "${decryptedPassword}" allow Printing`,
+          (err) => {
+            if (err) return reject(err);
+            resolve();
+          }
+        );
+      });
+
+      const encryptedPdf = fs.readFileSync(tempOutput);
+
+      // Combine course title + type + certificate number
+      const certificateTitle = `${cert.courseTitle} ${cert.type} Certificate #${cert.certId}`;
+
+      // Prepare email details
+      const emailDetails = {
+        certificateTitle, // course + type + number
+        certificateNumber: cert.certId,
+      };
+
+      // Send certificate email
+      await sendCertificateEmail(
+        user.email,
+        user.name,
+        encryptedPdf,
+        emailDetails
+      );
+
+      // Optional: clean up temp files
+      fs.unlinkSync(tempInput);
+      fs.unlinkSync(tempOutput);
+    }
+
+    // Return certificate metadata
     res.json({ success: true, cert });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ success: false, message: err.message });
   }
 });

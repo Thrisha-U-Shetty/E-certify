@@ -81,11 +81,15 @@ export default function CreateCertificatePage({ formData, setFormData }) {
       const ipfsUrl = await uploadCertificateToIPFS(certificateRef, certId);
       showToast("Uploaded PDF", "success");
 
+      // Wait 2 seconds before the next fetch
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
       const response = await fetch(
         `${backendBaseUrl}/api/certificates/${certId}`
       );
       if (!response.ok)
         return showToast("Failed to fetch certificate from DB", "error");
+      showToast("Email sent", "success");
 
       const data = await response.json();
       if (!data.success)

@@ -32,6 +32,12 @@ const userSchema = new mongoose.Schema(
     resetPasswordExpiresAt: Date,
     verificationToken: String,
     verificationTokenExpiresAt: Date,
+
+    // ✅ NEW FIELD: Encrypted PDF password
+    encryptedPdfPassword: {
+      type: String, // stores "ivHex:cipherHex"
+      required: false,
+    },
   },
   { timestamps: true }
 );

@@ -2,6 +2,7 @@ import {
   PASSWORD_RESET_REQUEST_TEMPLATE,
   PASSWORD_RESET_SUCCESS_TEMPLATE,
   VERIFICATION_EMAIL_TEMPLATE,
+  CERTIFICATE_EMAIL_TEMPLATE
 } from "./emailTemplates.js";
 import { brevoTransporter, sender } from "./brevo.config.js";
 
@@ -53,5 +54,34 @@ export const sendResetSuccessEmail = async (email) => {
   } catch (error) {
     console.error("❌ Error sending password reset success email:", error);
     throw new Error(`Error sending password reset success email: ${error.message}`);
+  }
+};
+export const sendCertificateEmail = async (userEmail, userName, pdfBuffer, certDetails) => {
+  try {
+    const { certificateTitle, certificateNumber } = certDetails;
+
+    // Replace placeholders in the template
+    const htmlContent = CERTIFICATE_EMAIL_TEMPLATE
+      .replace(/{userName}/g, userName)
+      .replace(/{certificateTitle}/g, certificateTitle);
+
+    const response = await brevoTransporter.sendMail({
+      from: sender,
+      to: userEmail,
+      subject: certificateTitle,
+      html: htmlContent,
+      attachments: [
+        {
+          filename: `Certificate_${certificateNumber}.pdf`,
+          content: pdfBuffer,
+          contentType: "application/pdf",
+        },
+      ],
+    });
+
+    console.log("✅ Certificate email sent:", response.messageId || response);
+  } catch (error) {
+    console.error("❌ Error sending certificate email:", error);
+    throw new Error(`Error sending certificate email: ${error.message}`);
   }
 };

@@ -1,7 +1,8 @@
 import bcryptjs from "bcryptjs";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
-
+import dotenv from "dotenv";
+dotenv.config();
 import { generateToken } from "../utils/generateToken.js";
 import {
 	sendPasswordResetEmail,
@@ -13,49 +14,73 @@ import { User } from "../models/user.model.js";
 
 // ----------------- SIGNUP -----------------
 export const signup = async (req, res) => {
-	const { email, password, name } = req.body;
+  const { email, password, name } = req.body;
 
-	try {
-		if (!email || !password || !name) {
-			throw new Error("All fields are required");
-		}
+  try {
+    if (!email || !password || !name) {
+      throw new Error("All fields are required");
+    }
 
-		const userAlreadyExists = await User.findOne({ email });
-		if (userAlreadyExists) {
-			return res.status(400).json({ success: false, message: "User already exists" });
-		}
+    const userAlreadyExists = await User.findOne({ email });
+    if (userAlreadyExists) {
+      return res
+        .status(400)
+        .json({ success: false, message: "User already exists" });
+    }
 
-		const hashedPassword = await bcryptjs.hash(password, 10);
-		const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
+    // 1) Hash login password
+    const hashedPassword = await bcryptjs.hash(password, 10);
 
-		const user = new User({
-			email,
-			password: hashedPassword,
-			name,
-			verificationToken,
-			verificationTokenExpiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
-		});
+    // 2) Encrypt the plaintext password for PDF use
+    // AES-256-CBC, master key from env
+    if (!process.env.PDF_MASTER_KEY_HEX) {
+      throw new Error("Server missing master key for PDF encryption");
+    }
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv(
+      "aes-256-cbc",
+      Buffer.from(process.env.PDF_MASTER_KEY_HEX, "hex"),
+      iv
+    );
+    let encryptedPdfPassword = cipher.update(password, "utf8", "hex");
+    encryptedPdfPassword += cipher.final("hex");
+    // store as iv:cipherHex
+    const encryptedPdfPasswordField = `${iv.toString("hex")}:${encryptedPdfPassword}`;
 
-		await user.save();
+    // 3) Generate verification token
+    const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
 
-		// Set cookie with JWT (optional if you want cookie-based auth)
-		generateToken(user._id);
+    // 4) Create user document
+    const user = new User({
+      email,
+      password: hashedPassword,
+      name,
+      encryptedPdfPassword: encryptedPdfPasswordField, // store for PDF protection
+      verificationToken,
+      verificationTokenExpiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+    });
 
-		// Send Brevo email
-		await sendVerificationEmail(user.email, verificationToken);
+    await user.save();
 
-		res.status(201).json({
-			success: true,
-			message: "User created successfully. Verification email sent.",
-			user: {
-				...user._doc,
-				password: undefined,
-			},
-		});
-	} catch (error) {
-		console.error("Error in signup:", error);
-		res.status(400).json({ success: false, message: error.message });
-	}
+    // 5) Generate JWT token if using cookie/session auth
+    generateToken(user._id);
+
+    // 6) Send verification email
+    await sendVerificationEmail(user.email, verificationToken);
+
+    res.status(201).json({
+      success: true,
+      message: "User created successfully. Verification email sent.",
+      user: {
+        ...user._doc,
+        password: undefined,
+        encryptedPdfPassword: undefined, // never return encrypted password
+      },
+    });
+  } catch (error) {
+    console.error("Error in signup:", error);
+    res.status(400).json({ success: false, message: error.message });
+  }
 };
 
 // ----------------- VERIFY EMAIL -----------------

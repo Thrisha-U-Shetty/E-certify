@@ -10,12 +10,33 @@ const SignUpPage = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [nameError, setNameError] = useState("");
+
   const navigate = useNavigate();
 
   const { signup, error, isLoading } = useAuthStore();
 
   const handleSignUp = async (e) => {
     e.preventDefault();
+
+    const nameRegex = /^[A-Za-z\s]+$/;
+    if (!name.trim()) {
+      setNameError("Name is required");
+      return;
+    }
+    if (name.length < 3) {
+      setNameError("Name must be at least 3 characters long");
+      return;
+    }
+    if (name.length > 50) {
+      setNameError("Name cannot exceed 50 characters");
+      return;
+    }
+    if (!nameRegex.test(name)) {
+      setNameError("Name can only contain letters and spaces");
+      return;
+    }
+    setNameError("");
 
     try {
       await signup(email, password, name);
@@ -45,8 +66,14 @@ const SignUpPage = () => {
               type="text"
               placeholder="Full Name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (nameError) setNameError("");
+              }}
             />
+            {nameError && (
+              <p className="text-red-500 font-semibold mt-2">{nameError}</p>
+            )}
             <Input
               icon={Mail}
               type="email"

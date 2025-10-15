@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "../ui/button";
 
 export default function SendRequest() {
@@ -17,31 +17,40 @@ export default function SendRequest() {
   const [toast, setToast] = useState({ show: false, type: "", message: "" });
   const backendBaseUrl = import.meta.env.VITE_BACKEND_BASE_URL;
 
-  // ✅ Helper: show toast
+  // ✅ Fetch user name from JWT token on load
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        if (payload?.name) {
+          setFormData((prev) => ({ ...prev, name: payload.name }));
+        }
+      } catch (err) {
+        console.error("Error decoding token:", err);
+      }
+    }
+  }, []);
+
+  // ✅ Toast helper
   const triggerToast = (type, message) => {
     setToast({ show: true, type, message });
     setTimeout(() => setToast({ show: false, type: "", message: "" }), 4000);
   };
 
-  // ✅ Handle input change with character restrictions
+  // ✅ Handle input change
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    if (name === "name") {
-      // Allow only alphabets + spaces
-      const clean = value.replace(/[^A-Za-z ]/g, "");
-      setFormData((prev) => ({ ...prev, [name]: clean }));
-      return;
-    }
+    // Prevent manual editing of name
+    if (name === "name") return;
 
     if (name === "usn") {
-      // Allow only alphanumeric, no whitespace/special chars
       const clean = value.replace(/[^A-Za-z0-9]/g, "");
       setFormData((prev) => ({ ...prev, [name]: clean }));
       return;
     }
 
-    // Default handler
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -49,16 +58,11 @@ export default function SendRequest() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Validate name (letters + spaces only, no leading/trailing/multiple spaces)
-    if (!/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(formData.name)) {
-      triggerToast(
-        "error",
-        "Name must contain only letters and single spaces (no leading/trailing/multiple spaces, numbers, or special characters)."
-      );
+    if (!formData.name) {
+      triggerToast("error", "User name not found. Please re-login.");
       return;
     }
 
-    // Validate USN (must have both letters & numbers, no specials)
     if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]+$/.test(formData.usn)) {
       triggerToast(
         "error",
@@ -67,7 +71,6 @@ export default function SendRequest() {
       return;
     }
 
-    // Validate start < end date
     if (
       formData.start &&
       formData.end &&
@@ -83,36 +86,35 @@ export default function SendRequest() {
     setShowConfirm(true);
   };
 
-  // 🔑 Confirm submit and send request to backend
+  // 🔑 Confirm submit and send request
   const confirmSubmit = async () => {
     setShowConfirm(false);
     setIsSending(true);
 
     try {
-      const response = await fetch(
-        `${backendBaseUrl}/api/requests/create`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        }
-      );
+      const response = await fetch(`${backendBaseUrl}/api/requests/create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify(formData),
+      });
 
       if (!response.ok) throw new Error("Failed to send request");
 
       const data = await response.json();
       console.log("Saved Request:", data);
 
-      // Reset form
-      setFormData({
-        name: "",
+      setFormData((prev) => ({
+        ...prev,
         usn: "",
         courseTitle: "",
         type: "",
         start: "",
         end: "",
         signatory: "",
-      });
+      }));
 
       triggerToast("success", "Request submitted successfully!");
     } catch (err) {
@@ -140,15 +142,14 @@ export default function SendRequest() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4">
+          {/* ✅ Name field (auto-filled from token, read-only) */}
           <input
             type="text"
             name="name"
             value={formData.name}
-            onChange={handleChange}
-            placeholder="Recipient Name (Only alphabets)"
-            maxLength={50}
-            className="w-full border p-3 rounded-lg border-gray-600 bg-gray-900 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-400 transition text-sm sm:text-base"
-            required
+            readOnly
+            placeholder="Full Name (auto-filled)"
+            className="w-full border p-3 rounded-lg border-gray-600 bg-gray-700 text-white placeholder-gray-400 cursor-not-allowed text-sm sm:text-base"
           />
 
           <input
