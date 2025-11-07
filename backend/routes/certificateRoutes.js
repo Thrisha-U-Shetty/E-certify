@@ -39,6 +39,15 @@ router.post("/create", async (req, res) => {
     const endDate = new Date(end);
     const issueDate = new Date(issuedDate);
 
+    // Check if end date is before start date
+    if (endDate < startDate) {
+      return res.status(400).json({
+        success: false,
+        message: "End date cannot be earlier than start date",
+      });
+    }
+
+    // Check if issue date is before start or end date
     if (issueDate < startDate || issueDate < endDate) {
       return res.status(400).json({
         success: false,

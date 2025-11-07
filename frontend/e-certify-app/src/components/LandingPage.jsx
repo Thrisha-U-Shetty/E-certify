@@ -1,11 +1,14 @@
 import React from "react";
+import Lottie from "lottie-react";
+import blockchainAnimation from "./ui/blockchain.json";
+
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black flex flex-col">
       {/* Navbar */}
       <nav className="flex justify-between items-center px-8 py-4 shadow-lg bg-gray-900/80 backdrop-blur-lg sticky top-0 z-50">
         <h1 className="text-2xl font-extrabold text-white">E-Certify</h1>
-         {/* <img
+        {/* <img
           src="/cube.png"
           alt="E-Certify Logo"
           className="w-24 h-24 drop-shadow-[0_0_15px_rgba(16,185,129,0.8)] hover:scale-110 transition-transform duration-300"
@@ -55,12 +58,12 @@ export default function LandingPage() {
         {/* Right side - Illustration / Card */}
         <div className="flex-1 mt-12 md:mt-0 flex justify-center">
           <div className="w-80 h-80 bg-gray-800/70 backdrop-blur-lg border border-green-500 rounded-3xl shadow-2xl flex items-center justify-center">
-            <p className="text-center text-xl font-semibold text-green-400 leading-relaxed px-6">
-              🔒 Blockchain-Powered Security  
-              <span className="block text-gray-300 font-medium mt-2">
-                Instant, Tamper-Proof, and Globally Trusted Certificates
-              </span>
-            </p>
+            <Lottie
+              animationData={blockchainAnimation}
+              loop={true}
+              autoplay={true}
+              className="w-64 h-64"
+            />
           </div>
         </div>
       </div>
