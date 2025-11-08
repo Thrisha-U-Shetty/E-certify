@@ -104,7 +104,6 @@ export default function SendRequest() {
       if (!response.ok) throw new Error("Failed to send request");
 
       const data = await response.json();
-      console.log("Saved Request:", data);
 
       setFormData((prev) => ({
         ...prev,

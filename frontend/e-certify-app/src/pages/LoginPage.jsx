@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Mail, Lock, Loader } from "lucide-react";
+import { Mail, Lock, Loader, Eye, EyeOff } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Input from "../components/Input";
 
@@ -12,48 +12,49 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false); 
 
   // 🔹 Handle login
   const handleLogin = async (e) => {
-  e.preventDefault();
-  setIsLoading(true);
-  setError("");
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
 
-  try {
-    const response = await fetch("http://localhost:5000/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (response.ok) {
-      // Save token & user info
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("isLoggedIn", data.user.isLoggedIn);
-      localStorage.setItem("userEmail", data.user.email);
-      localStorage.setItem("userName", data.user.name);
-      localStorage.setItem("userRole", data.user.role);
+      if (response.ok) {
+        // Save token & user info
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("isLoggedIn", data.user.isLoggedIn);
+        localStorage.setItem("userEmail", data.user.email);
+        localStorage.setItem("userName", data.user.name);
+        localStorage.setItem("userRole", data.user.role);
 
-      // 🔹 Navigate after token/user is saved
-      setTimeout(() => {
-        if (data.user.role === "admin") {
-          navigate("/admin");
-        } else {
-          navigate("/user");
-        }
-      }, 50); // slight delay to ensure state/storage consistency
-    } else {
-      setError(data.message || "Invalid email or password");
+        // 🔹 Navigate after token/user is saved
+        setTimeout(() => {
+          if (data.user.role === "admin") {
+            navigate("/admin");
+          } else {
+            navigate("/user");
+          }
+        }, 50); // slight delay to ensure state/storage consistency
+      } else {
+        setError(data.message || "Invalid email or password");
+      }
+    } catch (error) {
+      console.error("Login failed:", error);
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error) {
-    console.error("Login failed:", error);
-    setError("Something went wrong. Please try again.");
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
@@ -78,14 +79,27 @@ const LoginPage = () => {
               required
             />
 
-            <Input
-              icon={Lock}
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div className="relative">
+              <Input
+                icon={Lock}
+                type={showPassword ? "text" : "password"} 
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-2.5 text-gray-400"
+              >
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
+              </button>
+            </div>
 
             <div className="flex items-center mb-6 justify-between">
               <Link

@@ -16,7 +16,7 @@ export const sendVerificationEmail = async (email, verificationToken) => {
       html: VERIFICATION_EMAIL_TEMPLATE.replace("{verificationCode}", verificationToken),
     });
 
-    console.log("✅ Verification email sent:", response.messageId || response);
+    console.log("✅ Verification email sent.");
   } catch (error) {
     console.error("❌ Error sending verification email:", error);
     throw new Error(`Error sending verification email: ${error.message}`);
@@ -33,7 +33,7 @@ export const sendPasswordResetEmail = async (email, resetURL) => {
       html: PASSWORD_RESET_REQUEST_TEMPLATE.replace("{resetURL}", resetURL),
     });
 
-    console.log("✅ Password reset email sent:", response.messageId || response);
+    console.log("✅ Password reset email sent.");
   } catch (error) {
     console.error("❌ Error sending password reset email:", error);
     throw new Error(`Error sending password reset email: ${error.message}`);
@@ -50,7 +50,7 @@ export const sendResetSuccessEmail = async (email) => {
       html: PASSWORD_RESET_SUCCESS_TEMPLATE,
     });
 
-    console.log("✅ Password reset success email sent:", response.messageId || response);
+    console.log("✅ Password reset success email sent.");
   } catch (error) {
     console.error("❌ Error sending password reset success email:", error);
     throw new Error(`Error sending password reset success email: ${error.message}`);
@@ -79,7 +79,7 @@ export const sendCertificateEmail = async (userEmail, userName, pdfBuffer, certD
       ],
     });
 
-    console.log("✅ Certificate email sent:", response.messageId || response);
+    console.log("✅ Certificate email sent.");
   } catch (error) {
     console.error("❌ Error sending certificate email:", error);
     throw new Error(`Error sending certificate email: ${error.message}`);

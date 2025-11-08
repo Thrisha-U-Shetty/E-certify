@@ -11,12 +11,6 @@ export const brevoTransporter = nodemailer.createTransport({
     pass: process.env.SMTP_PASS, // your SMTP key
   },
 });
-console.log("SMTP Config:", {
-  host: process.env.SMTP_HOST,
-  port: process.env.SMTP_PORT,
-  user: process.env.SMTP_USER,
-  from: process.env.FROM_EMAIL,
-});
 
 export const sender = {
   name: "E-Certify",
