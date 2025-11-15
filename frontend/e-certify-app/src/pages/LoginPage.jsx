@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Mail, Lock, Loader, Eye, EyeOff } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Input from "../components/Input";
+import { toast } from "react-hot-toast";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -13,6 +14,53 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false); 
+
+   const showToast = (message, type = "success") => {
+    toast.custom((t) => (
+      <div
+        className={`w-full sm:w-auto max-w-sm transform transition-all duration-200 ${
+          t.visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"
+        }`}
+      >
+        <div
+          className={`${
+            type === "success"
+              ? "bg-gradient-to-r from-green-700/90 via-green-600/90 to-green-500/90"
+              : "bg-gradient-to-r from-red-600 via-red-500 to-red-600"
+          } text-white px-4 py-3 rounded-lg shadow-md flex items-center justify-between relative overflow-hidden`}
+        >
+          {type === "success" && (
+            <svg
+              className="w-5 h-5 text-white mr-2 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          )}
+          <span className="font-medium flex-1">{message}</span>
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="ml-2 text-white/80 hover:text-white font-bold text-base"
+          >
+            ✕
+          </button>
+          <div
+            className="absolute bottom-0 left-0 h-0.5 bg-white/80 rounded-b"
+            style={{ width: "100%", animation: "shrink 5s linear forwards" }}
+          ></div>
+          <style>{`
+            @keyframes shrink {
+              from { transform: scaleX(1); transform-origin: left; }
+              to { transform: scaleX(0); transform-origin: left; }
+            }
+          `}</style>
+        </div>
+      </div>
+    ));
+  };
 
   // 🔹 Handle login
   const handleLogin = async (e) => {
@@ -36,6 +84,8 @@ const LoginPage = () => {
         localStorage.setItem("userEmail", data.user.email);
         localStorage.setItem("userName", data.user.name);
         localStorage.setItem("userRole", data.user.role);
+
+         showToast("Login successful!", "success");
 
         // 🔹 Navigate after token/user is saved
         setTimeout(() => {

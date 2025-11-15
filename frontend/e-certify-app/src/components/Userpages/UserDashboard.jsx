@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 import { jwtDecode } from "jwt-decode"; // works in some versions
-
+import { Toaster } from "react-hot-toast";
 
 export default function UserDashboard({ onLogout }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -22,6 +22,8 @@ export default function UserDashboard({ onLogout }) {
   }, []);
 
   return (
+    <>
+    <Toaster position="top-right" gutter={8} />
     <div className="min-h-screen flex flex-col md:flex-row bg-gradient-to-br from-black via-gray-900 to-black text-gray-200">
       {/* Sidebar */}
       <div
@@ -102,5 +104,6 @@ export default function UserDashboard({ onLogout }) {
         <Outlet />
       </div>
     </div>
+    </>
   );
 }

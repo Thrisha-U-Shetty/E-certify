@@ -39,8 +39,10 @@ const SignUpPage = () => {
     setNameError("");
 
     try {
-      await signup(email, password, name);
-      navigate("/verify-email");
+      const res = await signup(email, password, name);
+      if (res?.data?.success) {
+        navigate("/verify-email");
+      }
     } catch (error) {
       console.log(error);
     }
