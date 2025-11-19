@@ -42,16 +42,22 @@ const EmailVerificationPage = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    const verificationCode = code.join("");
-    try {
-      await verifyEmail(verificationCode);
-      navigate("/");
+  e.preventDefault();
+  const verificationCode = code.join("");
+
+  try {
+    const res = await verifyEmail(verificationCode);
+
+    if (res.status === 200 && res.data.success) {
       toast.success("Email verified successfully");
-    } catch (error) {
-      console.log(error);
+      navigate("/login"); // or "/"
     }
-  };
+
+  } catch (error) {
+    // ❌ OTP wrong
+    toast.error(error.response?.data?.message || "Invalid verification code");
+  }
+};
 
   useEffect(() => {
     if (code.every((digit) => digit !== "")) {

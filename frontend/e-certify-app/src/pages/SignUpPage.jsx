@@ -40,7 +40,7 @@ const SignUpPage = () => {
 
     try {
       const res = await signup(email, password, name);
-      if (res?.data?.success) {
+      if (res?.status === 201) {
         navigate("/verify-email");
       }
     } catch (error) {

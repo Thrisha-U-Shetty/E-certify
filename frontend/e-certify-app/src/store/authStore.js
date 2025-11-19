@@ -31,13 +31,13 @@ export const useAuthStore = create((set) => ({
         isLoading: false,
       });
 
-      return true; // 👈 return success
+      return response; // 👈 return success
     } catch (error) {
       set({
         error: error.response?.data?.message || "Error signing up",
         isLoading: false,
       });
-      return false; // 👈 return failure
+      throw error; // 👈 return failure
     }
   },
 
@@ -133,13 +133,13 @@ export const useAuthStore = create((set) => ({
         isLoading: false,
       });
 
-      return true;
+      return response;
     } catch (error) {
       set({
         error: error.response?.data?.message || "Error verifying email",
         isLoading: false,
       });
-      return false;
+      throw error;
     }
   },
 
