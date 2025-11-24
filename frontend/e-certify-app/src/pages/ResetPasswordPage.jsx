@@ -20,16 +20,15 @@ const ResetPasswordPage = () => {
     e.preventDefault();
 
     if (password !== confirmPassword) {
-      alert("Passwords do not match");
+      toast.error("Passwords do not match");
       return;
     }
     try {
       await resetPassword(token, password);
-
       toast.success("Password reset successfully, redirecting to login page...");
       setTimeout(() => {
         navigate("/login");
-      }, 2000);
+      }, 4000);
     } catch (error) {
       console.error(error);
       toast.error(error.message || "Error resetting password");

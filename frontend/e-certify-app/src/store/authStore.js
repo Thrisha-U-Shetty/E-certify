@@ -166,7 +166,7 @@ export const useAuthStore = create((set) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await axios.post(
-        `${API_URL}/reset-password/${token}`,
+        `${API_URL}/reset-password/${encodeURIComponent(token)}`,
         { password }
       );
       set({ message: response.data.message, isLoading: false });
