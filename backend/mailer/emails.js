@@ -9,8 +9,8 @@ import { brevoTransporter, sender } from "./brevo.config.js";
 // ----------------- Verification Email -----------------
 export const sendVerificationEmail = async (email, verificationToken) => {
   try {
-    const response = await brevoTransporter.sendMail({
-      from: sender, // { name, address } format in brevo.config.js
+    await brevoTransporter.sendMail({
+    from: sender, 
       to: email,
       subject: "Verify your email",
       html: VERIFICATION_EMAIL_TEMPLATE.replace("{verificationCode}", verificationToken),
@@ -26,7 +26,7 @@ export const sendVerificationEmail = async (email, verificationToken) => {
 // ----------------- Password Reset Request -----------------
 export const sendPasswordResetEmail = async (email, resetURL) => {
   try {
-    const response = await brevoTransporter.sendMail({
+    await brevoTransporter.sendMail({
       from: sender,
       to: email,
       subject: "Reset your password",
@@ -43,7 +43,7 @@ export const sendPasswordResetEmail = async (email, resetURL) => {
 // ----------------- Password Reset Success -----------------
 export const sendResetSuccessEmail = async (email) => {
   try {
-    const response = await brevoTransporter.sendMail({
+    await brevoTransporter.sendMail({
       from: sender,
       to: email,
       subject: "Password Reset Successful",
@@ -56,16 +56,17 @@ export const sendResetSuccessEmail = async (email) => {
     throw new Error(`Error sending password reset success email: ${error.message}`);
   }
 };
+
+// ----------------- Certificate Email (FIXED) -----------------
 export const sendCertificateEmail = async (userEmail, userName, pdfBuffer, certDetails) => {
   try {
     const { certificateTitle, certificateNumber } = certDetails;
 
-    // Replace placeholders in the template
     const htmlContent = CERTIFICATE_EMAIL_TEMPLATE
       .replace(/{userName}/g, userName)
       .replace(/{certificateTitle}/g, certificateTitle);
 
-    const response = await brevoTransporter.sendMail({
+    await brevoTransporter.sendMail({
       from: sender,
       to: userEmail,
       subject: certificateTitle,
@@ -73,8 +74,9 @@ export const sendCertificateEmail = async (userEmail, userName, pdfBuffer, certD
       attachments: [
         {
           filename: `Certificate_${certificateNumber}.pdf`,
-          content: pdfBuffer,
+          content: pdfBuffer.toString("base64"), // <-- REQUIRED FIX
           contentType: "application/pdf",
+          encoding: "base64",                   // <-- REQUIRED FIX
         },
       ],
     });
